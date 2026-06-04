@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Envelope Tracker Hub — Internal</title>
+<style>
+:root {
+  --bg:#f7f6f3; --surface:#fff; --surface2:#f1efea; --surface3:#e8e6e0;
+  --border:rgba(0,0,0,0.08); --text:#1a1a18; --muted:#6b6b67; --hint:#b0afa9;
+  --accent:#0f6e56; --accent-light:#e1f5ee; --accent-text:#085041;
+  --blue-fill:#e6f1fb; --blue-text:#0c447c;
+  --amber-fill:#faeeda; --amber-text:#633806;
+  --green-fill:#eaf3de; --green-text:#27500a;
+  --coral-fill:#faece7; --coral-text:#712b13;
+  --radius:10px; --radius-sm:6px; --radius-xs:4px;
+  --shadow:0 1px 3px rgba(0,0,0,0.07),0 1px 2px rgba(0,0,0,0.04);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;min-height:100vh}
+.page{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem 5rem}
+
+/* Header */
+.site-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2rem;gap:1rem;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:14px}
+.brand-logo{width:44px;height:44px;border-radius:var(--radius-sm);background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700;flex-shrink:0}
+.brand-text h1{font-size:21px;font-weight:600;letter-spacing:-.3px}
+.brand-text p{font-size:13px;color:var(--muted);margin-top:2px}
+.internal-pill{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;padding:4px 10px;border-radius:20px;background:var(--amber-fill);color:var(--amber-text);border:1px solid rgba(133,79,11,.15);align-self:flex-start;margin-top:4px}
+
+/* Stats */
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:2rem}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.stat-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+.stat-value{font-size:28px;font-weight:600;letter-spacing:-.5px;line-height:1}
+.stat-sub{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* Toolbar */
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+.toolbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);display:flex;align-items:center;gap:8px}
+.section-label::before{content:'';display:block;width:3px;height:14px;border-radius:2px;background:var(--accent)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;padding:7px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;transition:background .15s;white-space:nowrap;font-family:inherit}
+.btn:hover{background:var(--surface2)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:#0d5e49}
+.btn-sm{font-size:12px;padding:5px 11px}
+.btn svg,.icon-btn svg{width:14px;height:14px;flex-shrink:0}
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:var(--radius-xs);border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;font-family:inherit}
+.icon-btn:hover{background:var(--surface2);color:var(--text)}
+.icon-btn.danger:hover{background:var(--coral-fill);color:var(--coral-text);border-color:transparent}
+
+/* Search */
+.search-wrap{position:relative}
+.search-wrap svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--hint);pointer-events:none;width:13px;height:13px}
+#search{font-size:13px;padding:7px 12px 7px 30px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);outline:none;width:210px;font-family:inherit}
+#search:focus{border-color:var(--accent)}
+
+/* Client group */
+.client-group{margin-bottom:10px}
+.client-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);cursor:pointer;user-select:none;transition:background .15s}
+.client-header:hover{background:var(--surface2)}
+.client-header.open{border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom-color:transparent}
+.client-header-left{display:flex;align-items:center;gap:12px;min-width:0}
+.client-avatar{width:36px;height:36px;border-radius:var(--radius-xs);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;letter-spacing:-.5px}
+.client-name{font-size:15px;font-weight:600;letter-spacing:-.2px}
+.client-meta{font-size:12px;color:var(--muted);margin-top:1px}
+.client-header-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.client-pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px}
+.pill-active{background:var(--green-fill);color:var(--green-text)}
+.pill-archived{background:var(--surface2);color:var(--muted)}
+.pill-draft{background:var(--blue-fill);color:var(--blue-text)}
+.chevron{width:16px;height:16px;color:var(--hint);transition:transform .2s;flex-shrink:0}
+.chevron.open{transform:rotate(180deg)}
+.client-actions{display:flex;gap:5px}
+
+/* Panel */
+.panel{border:1px solid var(--border);border-top:none;border-bottom-left-radius:var(--radius);border-bottom-right-radius:var(--radius);background:var(--surface);overflow:hidden;display:none}
+.panel.open{display:block}
+.panel-toolbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border)}
+.panel-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+
+/* Distribution rows */
+.dist-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:13px 16px;border-bottom:1px solid var(--border);transition:background .12s}
+.dist-row:last-child{border-bottom:none}
+.dist-row:hover{background:var(--surface2)}
+.dist-left{display:flex;flex-direction:column;gap:5px;min-width:0}
+.dist-name{font-size:14px;font-weight:600;letter-spacing:-.1px}
+.dist-meta{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.dist-meta-item{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px}
+.dist-meta-item svg{width:11px;height:11px;flex-shrink:0}
+.dist-url{font-size:11px;font-family:'SF Mono','Fira Code',monospace;color:var(--accent);background:var(--accent-light);padding:2px 7px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px;display:inline-block}
+.dist-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.prog{width:90px}
+.prog-label{font-size:11px;color:var(--muted);text-align:right;margin-bottom:3px}
+.prog-track{height:5px;border-radius:3px;background:var(--surface3);overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .6s ease}
+.dist-actions{display:flex;gap:5px}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:3px 8px;border-radius:20px;white-space:nowrap}
+.badge-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.badge-active{background:var(--green-fill);color:var(--green-text)}
+.badge-archived{background:var(--surface2);color:var(--muted)}
+.badge-draft{background:var(--blue-fill);color:var(--blue-text)}
+
+/* Empty states */
+.empty-page{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-page svg{width:44px;height:44px;margin:0 auto 12px;opacity:.25;display:block}
+.empty-page p{font-size:14px;margin-bottom:16px}
+.empty-panel{padding:18px 16px;color:var(--muted);font-size:13px;text-align:center}
+
+/* Repo map */
+.repo-map{margin-top:2rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.repo-map summary{padding:16px 20px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);list-style:none;display:flex;align-items:center;gap:8px;user-select:none}
+.repo-map summary:hover{background:var(--surface2)}
+.repo-map pre{padding:16px 20px;font-family:'SF Mono','Fira Code',monospace;font-size:12px;color:var(--muted);line-height:1.9;white-space:pre-wrap;border-top:1px solid var(--border)}
+.fa{color:var(--accent);font-weight:600}
+.fd{color:var(--blue-text)}
+.fh{color:var(--hint)}
+
+/* How it works */
+.how-it-works{margin-top:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.how-it-works summary{padding:16px 20px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);list-style:none;display:flex;align-items:center;gap:8px;user-select:none}
+.how-it-works summary:hover{background:var(--surface2)}
+.how-body{padding:20px;border-top:1px solid var(--border);display:grid;gap:12px}
+.how-row{display:flex;gap:12px;font-size:13px;color:var(--muted);line-height:1.6}
+.how-icon{font-size:16px;flex-shrink:0;width:24px;text-align:center}
+.how-row strong{color:var(--text);font-weight:600}
+
+/* Modals */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:28px;width:100%;max-width:500px;box-shadow:0 20px 60px rgba(0,0,0,.15);max-height:90vh;overflow-y:auto}
+.modal h2{font-size:17px;font-weight:600;margin-bottom:3px}
+.modal-sub{font-size:13px;color:var(--muted);margin-bottom:22px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.form-group input,.form-group select{width:100%;font-size:13px;padding:8px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);outline:none;font-family:inherit}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent)}
+.form-hint{font-size:11px;color:var(--hint);margin-top:4px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-divider{height:1px;background:var(--border);margin:16px 0}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+
+/* Color swatches */
+.swatches{display:flex;gap:8px;flex-wrap:wrap}
+.swatch{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .15s,border-color .15s}
+.swatch:hover{transform:scale(1.12)}
+.swatch.selected{border-color:var(--text);transform:scale(1.1)}
+
+/* Footer */
+.footer{margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.footer p{font-size:12px;color:var(--hint)}
+
+@media(max-width:580px){
+  .stats-bar{grid-template-columns:1fr 1fr}
+  .client-pills{display:none}
+  .prog{display:none}
+  #search{width:100%}
+  .form-row{grid-template-columns:1fr}
+  .dist-url{max-width:180px}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ═══ HEADER ═══ -->
+<header class="site-header">
+  <div class="brand">
+    <div class="brand-logo">ET</div>
+    <div class="brand-text">
+      <h1>Envelope Tracker Hub</h1>
+      <p>All clients &amp; distributions · Internal management</p>
+    </div>
+  </div>
+  <span class="internal-pill">⚙ Internal only</span>
+</header>
+
+<!-- ═══ GLOBAL STATS ═══ -->
+<div class="stats-bar">
+  <div class="stat"><div class="stat-label">Clients</div><div class="stat-value" id="gs-clients">0</div><div class="stat-sub">total accounts</div></div>
+  <div class="stat"><div class="stat-label">Distributions</div><div class="stat-value" id="gs-dists">0</div><div class="stat-sub">all time</div></div>
+  <div class="stat"><div class="stat-label">Active</div><div class="stat-value" id="gs-active">0</div><div class="stat-sub">live dashboards</div></div>
+  <div class="stat"><div class="stat-label">Draft</div><div class="stat-value" id="gs-draft">0</div><div class="stat-sub">not yet live</div></div>
+  <div class="stat"><div class="stat-label">Archived</div><div class="stat-value" id="gs-archived">0</div><div class="stat-sub">completed</div></div>
+</div>
+
+<!-- ═══ TOOLBAR ═══ -->
+<div class="toolbar">
+  <div class="section-label">Clients &amp; distributions</div>
+  <div class="toolbar-right">
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="search" placeholder="Search clients or distributions…">
+    </div>
+    <button class="btn btn-primary" onclick="openClientModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      Add client
+    </button>
+  </div>
+</div>
+
+<!-- ═══ CLIENT LIST ═══ -->
+<div id="client-list"></div>
+<div id="empty-page" style="display:none">
+  <div class="empty-page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <p>No clients yet. Add your first client to get started.</p>
+    <button class="btn btn-primary" onclick="openClientModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      Add client
+    </button>
+  </div>
+</div>
+
+<!-- ═══ REPO MAP ═══ -->
+<details class="repo-map">
+  <summary>📁 GitHub repository file map</summary>
+  <pre id="repo-map">—</pre>
+</details>
+
+<!-- ═══ HOW IT WORKS ═══ -->
+<details class="how-it-works">
+  <summary>❓ How it works — index vs tracker dashboard</summary>
+  <div class="how-body">
+    <div class="how-row"><span class="how-icon">✅</span><div><strong>What updates automatically from Google Sheets:</strong> The client-facing tracker dashboard (each <code>.html</code> file) fetches live data from its linked Google Sheet every 30 seconds. The moment you update the sheet, the client sees the change within 30 seconds — no action needed from you.</div></div>
+    <div class="how-row"><span class="how-icon">🖊️</span><div><strong>What you update manually here in the index:</strong> Client names, distribution names, URLs, completion %, and status. This index is your internal control panel — it does not connect to Google Sheets. Update it when you add a new distribution, go live with a URL, or close out a distribution.</div></div>
+    <div class="how-row"><span class="how-icon">🔗</span><div><strong>How they link together:</strong> Each distribution in the index has a URL field. That URL points to the tracker dashboard HTML file hosted on GitHub. Clients only ever see the tracker dashboard — they never see this index.</div></div>
+    <div class="how-row"><span class="how-icon">📁</span><div><strong>File structure in GitHub:</strong> Keep one folder per client (e.g. <code>ahead/</code>, <code>rjw/</code>). Each distribution is one HTML file inside that folder. The index lives at the root. See the repo map above for the live structure based on your current data.</div></div>
+    <div class="how-row"><span class="how-icon">♻️</span><div><strong>New distribution:</strong> Duplicate <code>tracker-dashboard.html</code>, rename it (e.g. <code>jun-15-2026.html</code>), update the 6 CONFIG values at the top of the script, upload to the client's GitHub folder, then add it here in the index with its new URL.</div></div>
+  </div>
+</details>
+
+<footer class="footer">
+  <p>Envelope Tracker Hub · Internal only · Data stored in your browser</p>
+  <p id="footer-ts">—</p>
+</footer>
+</div>
+
+<!-- ═══ MODAL: Client ═══ -->
+<div class="modal-overlay" id="modal-client">
+  <div class="modal">
+    <h2 id="mc-title">Add client</h2>
+    <div class="modal-sub">Client details — distributions are added separately under each client.</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Client name *</label>
+        <input type="text" id="mc-name" placeholder="e.g. AHEAD, RJW, Thrive">
+      </div>
+      <div class="form-group">
+        <label>Short code *</label>
+        <input type="text" id="mc-code" placeholder="e.g. AHEAD" maxlength="8">
+        <div class="form-hint">Used in file paths — no spaces</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Contact / notes</label>
+      <input type="text" id="mc-notes" placeholder="e.g. Contact: Jane Doe · jane@example.com">
+    </div>
+    <div class="form-group">
+      <label>Accent color</label>
+      <div class="swatches" id="swatches">
+        <button class="swatch" data-color="#0f6e56" style="background:#0f6e56"></button>
+        <button class="swatch" data-color="#185fa5" style="background:#185fa5"></button>
+        <button class="swatch" data-color="#854f0b" style="background:#854f0b"></button>
+        <button class="swatch" data-color="#712b13" style="background:#712b13"></button>
+        <button class="swatch" data-color="#4a1d8a" style="background:#4a1d8a"></button>
+        <button class="swatch" data-color="#1a5276" style="background:#1a5276"></button>
+        <button class="swatch" data-color="#633806" style="background:#633806"></button>
+        <button class="swatch" data-color="#2e4057" style="background:#2e4057"></button>
+      </div>
+      <input type="hidden" id="mc-color" value="#0f6e56">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-client')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveClient()">Save client</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Distribution ═══ -->
+<div class="modal-overlay" id="modal-dist">
+  <div class="modal">
+    <h2 id="md-title">Add distribution</h2>
+    <div class="modal-sub">Adding to <strong id="md-client-label">—</strong></div>
+    <input type="hidden" id="md-client-id">
+    <div class="form-group">
+      <label>Distribution name *</label>
+      <input type="text" id="md-name" placeholder="e.g. May 29, 2026 Distribution">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="md-date">
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="md-status">
+          <option value="active">Active</option>
+          <option value="draft">Draft</option>
+          <option value="archived">Archived</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-divider"></div>
+    <div class="form-group">
+      <label>Dashboard URL</label>
+      <input type="text" id="md-url" placeholder="e.g. https://yourname.github.io/tracker/ahead/may-29-2026.html">
+      <div class="form-hint">Leave blank until the file is uploaded to GitHub</div>
+    </div>
+    <div class="form-group">
+      <label>Filename (auto-generated)</label>
+      <input type="text" id="md-filename" readonly style="background:var(--surface2);color:var(--muted)">
+      <div class="form-hint">Upload this file to your GitHub repo inside the client folder</div>
+    </div>
+    <div class="form-divider"></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Digital Sheet ID</label>
+        <input type="text" id="md-digital-id" placeholder="Google Sheet ID">
+      </div>
+      <div class="form-group">
+        <label>Mail Sheet ID</label>
+        <input type="text" id="md-mail-id" placeholder="Google Sheet ID">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Completion % <span style="font-weight:400;text-transform:none;letter-spacing:0">(update manually as work progresses)</span></label>
+      <input type="number" id="md-pct" min="0" max="100" value="0">
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <input type="text" id="md-notes" placeholder="e.g. 11 envelopes · Q2 cohort">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-dist')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveDist()">Save distribution</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+//  STORAGE
+// ════════════════════════════════════════
+const KEY = 'et_hub_v3';
+const SEED = {
+  clients:[
+    {id:'c-ahead', name:'AHEAD',  code:'AHEAD',  color:'#0f6e56', notes:''},
+    {id:'c-rjw',   name:'RJW',    code:'RJW',    color:'#185fa5', notes:''},
+    {id:'c-thrive',name:'Thrive', code:'THRIVE', color:'#4a1d8a', notes:''},
+  ],
+  distributions:[
+    {id:'d-1',clientId:'c-ahead', name:'May 29, 2026 Distribution',date:'2026-05-29',status:'active',   url:'ahead/may-29-2026.html',  filename:'ahead/may-29-2026.html',  digitalId:'',mailId:'',pct:36, notes:'4 digital · 7 physical'},
+    {id:'d-2',clientId:'c-ahead', name:'Mar 25, 2026 Distribution',date:'2026-03-25',status:'archived', url:'ahead/mar-25-2026.html',  filename:'ahead/mar-25-2026.html',  digitalId:'',mailId:'',pct:100,notes:'Class A & B completed'},
+    {id:'d-3',clientId:'c-rjw',   name:'Jun 1, 2026 Distribution', date:'2026-06-01',status:'draft',    url:'',                        filename:'rjw/jun-01-2026.html',    digitalId:'',mailId:'',pct:0,  notes:'Pending sheet setup'},
+    {id:'d-4',clientId:'c-thrive',name:'May 15, 2026 Distribution',date:'2026-05-15',status:'active',   url:'thrive/may-15-2026.html', filename:'thrive/may-15-2026.html', digitalId:'',mailId:'',pct:60, notes:'8 envelopes'},
+  ]
+};
+
+let S = {clients:[],distributions:[]};
+let editClientId=null, editDistId=null, search='';
+const OPEN=new Set();
+
+function load(){
+  try{ const r=localStorage.getItem(KEY); S=r?JSON.parse(r):{...SEED}; }
+  catch{ S={...SEED}; }
+}
+function persist(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch{} }
+function uid(){ return 'x'+Date.now()+Math.random().toString(36).slice(2,5); }
+
+// ════════════════════════════════════════
+//  RENDER
+// ════════════════════════════════════════
+function render(){
+  const q=search.toLowerCase();
+  const visClients=S.clients.filter(c=>{
+    if(!q) return true;
+    if(c.name.toLowerCase().includes(q)||c.code.toLowerCase().includes(q)) return true;
+    return S.distributions.some(d=>d.clientId===c.id&&(d.name.toLowerCase().includes(q)||(d.notes||'').toLowerCase().includes(q)));
+  });
+
+  // stats
+  document.getElementById('gs-clients').textContent=S.clients.length;
+  document.getElementById('gs-dists').textContent=S.distributions.length;
+  document.getElementById('gs-active').textContent=S.distributions.filter(d=>d.status==='active').length;
+  document.getElementById('gs-draft').textContent=S.distributions.filter(d=>d.status==='draft').length;
+  document.getElementById('gs-archived').textContent=S.distributions.filter(d=>d.status==='archived').length;
+
+  const list=document.getElementById('client-list');
+  const empty=document.getElementById('empty-page');
+
+  if(!visClients.length){ list.innerHTML=''; empty.style.display='block'; renderMap(); return; }
+  empty.style.display='none';
+
+  list.innerHTML=visClients.map(c=>{
+    const dists=S.distributions.filter(d=>{
+      if(d.clientId!==c.id) return false;
+      if(!q) return true;
+      return d.name.toLowerCase().includes(q)||(d.notes||'').toLowerCase().includes(q)||c.name.toLowerCase().includes(q)||c.code.toLowerCase().includes(q);
+    });
+    const act=dists.filter(d=>d.status==='active').length;
+    const arc=dists.filter(d=>d.status==='archived').length;
+    const drf=dists.filter(d=>d.status==='draft').length;
+    const isOpen=OPEN.has(c.id)||!!q;
+    const ini=c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    return `
+    <div class="client-group" id="cg-${c.id}">
+      <div class="client-header${isOpen?' open':''}" onclick="toggle('${c.id}')" id="ch-${c.id}">
+        <div class="client-header-left">
+          <div class="client-avatar" style="background:${c.color}">${ini}</div>
+          <div>
+            <div class="client-name">${c.name}</div>
+            <div class="client-meta">${dists.length} distribution${dists.length!==1?'s':''} · <span style="font-family:monospace;font-size:11px">${c.code.toLowerCase()}/</span>${c.notes?' · '+c.notes:''}</div>
+          </div>
+        </div>
+        <div class="client-header-right">
+          <div class="client-pills">
+            ${act?`<span class="pill pill-active">${act} active</span>`:''}
+            ${drf?`<span class="pill pill-draft">${drf} draft</span>`:''}
+            ${arc?`<span class="pill pill-archived">${arc} archived</span>`:''}
+          </div>
+          <div class="client-actions" onclick="event.stopPropagation()">
+            <button class="icon-btn" onclick="openClientModal('${c.id}')" title="Edit client">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="icon-btn danger" onclick="delClient('${c.id}')" title="Delete client">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </button>
+          </div>
+          <svg class="chevron${isOpen?' open':''}" id="chev-${c.id}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="panel${isOpen?' open':''}" id="dp-${c.id}">
+        <div class="panel-toolbar">
+          <span class="panel-label">${c.name} distributions</span>
+          <button class="btn btn-sm btn-primary" onclick="openDistModal('${c.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+            Add distribution
+          </button>
+        </div>
+        ${dists.length?dists.map(d=>distRow(d,c.color)).join(''):`<div class="empty-panel">No distributions yet — add one above.</div>`}
+      </div>
+    </div>`;
+  }).join('');
+
+  renderMap();
+  document.getElementById('footer-ts').textContent='Updated: '+new Date().toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function distRow(d,color){
+  const pct=d.pct??0;
+  const dateStr=d.date?new Date(d.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—';
+  const bc=d.status==='active'?'badge-active':d.status==='draft'?'badge-draft':'badge-archived';
+  const bl=d.status==='active'?'Active':d.status==='draft'?'Draft':'Archived';
+  return `<div class="dist-row">
+    <div class="dist-left">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span class="dist-name">${d.name}</span>
+        <span class="badge ${bc}"><span class="badge-dot"></span>${bl}</span>
+      </div>
+      <div class="dist-meta">
+        <span class="dist-meta-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          ${dateStr}
+        </span>
+        ${d.filename?`<span class="dist-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span style="font-family:monospace;font-size:11px">${d.filename}</span></span>`:''}
+        ${d.notes?`<span class="dist-meta-item">${d.notes}</span>`:''}
+      </div>
+      ${d.url?`<a href="${d.url}" class="dist-url" target="_blank" rel="noopener">${d.url}</a>`:`<span style="font-size:11px;color:var(--hint)">No URL yet — upload file then edit to add</span>`}
+    </div>
+    <div class="dist-right">
+      <div class="prog">
+        <div class="prog-label">${pct}% done</div>
+        <div class="prog-track"><div class="prog-fill" style="width:${pct}%;background:${color}"></div></div>
+      </div>
+      <div class="dist-actions">
+        ${d.url?`<a href="${d.url}" class="icon-btn" target="_blank" rel="noopener" title="Open dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>`:''}
+        <button class="icon-btn" onclick="copyText('${d.url||d.filename||''}')" title="Copy URL or filename"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+        <button class="icon-btn" onclick="openDistModal('${d.clientId}','${d.id}')" title="Edit distribution"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <button class="icon-btn danger" onclick="delDist('${d.id}')" title="Delete distribution"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderMap(){
+  const pre=document.getElementById('repo-map');
+  const lines=['your-repo/','├── <span class="fa">index.html</span>  ← this internal hub'];
+  const byClient={};
+  S.distributions.forEach(d=>{ if(!byClient[d.clientId]) byClient[d.clientId]=[]; byClient[d.clientId].push(d); });
+  S.clients.forEach((c,ci)=>{
+    const dists=byClient[c.id]||[];
+    const last=ci===S.clients.length-1;
+    lines.push(`${last?'└──':'├──'} ${c.code.toLowerCase()}/`);
+    const p2=last?'    ':'│   ';
+    dists.forEach((d,di)=>{
+      const fn=d.filename?d.filename.split('/').pop():`${c.code.toLowerCase()}-${(d.date||'').slice(0,10)}.html`;
+      const tag=d.status==='active'?' ← active':d.status==='draft'?' ← draft':' ← archived';
+      const cls=d.status==='active'?'fa':d.status==='draft'?'fd':'fh';
+      lines.push(`${p2}${di===dists.length-1?'└──':'├──'} <span class="${cls}">${fn}${tag}</span>`);
+    });
+    if(!dists.length) lines.push(`${p2}└── (no distributions yet)`);
+  });
+  pre.innerHTML=lines.join('\n');
+}
+
+// ════════════════════════════════════════
+//  TOGGLE
+// ════════════════════════════════════════
+function toggle(id){
+  const p=document.getElementById(`dp-${id}`);
+  const h=document.getElementById(`ch-${id}`);
+  const v=document.getElementById(`chev-${id}`);
+  const isOpen=p.classList.contains('open');
+  [p,h,v].forEach(el=>el.classList.toggle('open',!isOpen));
+  isOpen?OPEN.delete(id):OPEN.add(id);
+}
+
+// ════════════════════════════════════════
+//  CLIENT MODAL
+// ════════════════════════════════════════
+function openClientModal(id){
+  editClientId=id||null;
+  document.getElementById('mc-title').textContent=id?'Edit client':'Add client';
+  if(id){
+    const c=S.clients.find(x=>x.id===id);
+    document.getElementById('mc-name').value=c.name;
+    document.getElementById('mc-code').value=c.code;
+    document.getElementById('mc-notes').value=c.notes||'';
+    document.getElementById('mc-color').value=c.color;
+    setColor(c.color);
+  } else {
+    ['mc-name','mc-code','mc-notes'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('mc-color').value='#0f6e56';
+    setColor('#0f6e56');
+  }
+  document.getElementById('modal-client').classList.add('open');
+  setTimeout(()=>document.getElementById('mc-name').focus(),80);
+}
+
+function saveClient(){
+  const name=document.getElementById('mc-name').value.trim();
+  const code=document.getElementById('mc-code').value.trim().replace(/\s+/g,'').toUpperCase();
+  if(!name||!code){alert('Client name and code are required.');return;}
+  const data={name,code,color:document.getElementById('mc-color').value,notes:document.getElementById('mc-notes').value.trim()};
+  if(editClientId){
+    const i=S.clients.findIndex(x=>x.id===editClientId);
+    if(i>-1) S.clients[i]={...S.clients[i],...data};
+  } else {
+    S.clients.push({id:uid(),...data});
+  }
+  persist();render();closeModal('modal-client');
+}
+
+function delClient(id){
+  const c=S.clients.find(x=>x.id===id);
+  const n=S.distributions.filter(d=>d.clientId===id).length;
+  if(!confirm(`Delete "${c.name}" and all ${n} distribution(s)? This cannot be undone.`)) return;
+  S.clients=S.clients.filter(x=>x.id!==id);
+  S.distributions=S.distributions.filter(d=>d.clientId!==id);
+  OPEN.delete(id);persist();render();
+}
+
+// ════════════════════════════════════════
+//  COLOR PICKER
+// ════════════════════════════════════════
+function setColor(color){
+  document.querySelectorAll('.swatch').forEach(s=>s.classList.toggle('selected',s.dataset.color===color));
+}
+document.getElementById('swatches').addEventListener('click',e=>{
+  const s=e.target.closest('.swatch');
+  if(!s) return;
+  document.getElementById('mc-color').value=s.dataset.color;
+  setColor(s.dataset.color);
+});
+
+// ════════════════════════════════════════
+//  DISTRIBUTION MODAL
+// ════════════════════════════════════════
+function openDistModal(clientId,distId){
+  editDistId=distId||null;
+  const c=S.clients.find(x=>x.id===clientId);
+  document.getElementById('md-title').textContent=distId?'Edit distribution':'Add distribution';
+  document.getElementById('md-client-label').textContent=c.name;
+  document.getElementById('md-client-id').value=clientId;
+  if(distId){
+    const d=S.distributions.find(x=>x.id===distId);
+    document.getElementById('md-name').value=d.name;
+    document.getElementById('md-date').value=d.date||'';
+    document.getElementById('md-status').value=d.status;
+    document.getElementById('md-url').value=d.url||'';
+    document.getElementById('md-filename').value=d.filename||'';
+    document.getElementById('md-digital-id').value=d.digitalId||'';
+    document.getElementById('md-mail-id').value=d.mailId||'';
+    document.getElementById('md-pct').value=d.pct??0;
+    document.getElementById('md-notes').value=d.notes||'';
+  } else {
+    ['md-name','md-date','md-url','md-digital-id','md-mail-id','md-notes'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('md-status').value='active';
+    document.getElementById('md-pct').value=0;
+    document.getElementById('md-filename').value='';
+  }
+  document.getElementById('modal-dist').classList.add('open');
+  setTimeout(()=>document.getElementById('md-name').focus(),80);
+}
+
+function autoFilename(){
+  const cid=document.getElementById('md-client-id').value;
+  const c=S.clients.find(x=>x.id===cid);
+  if(!c) return;
+  const date=document.getElementById('md-date').value;
+  const name=document.getElementById('md-name').value.trim();
+  const slug=date||name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  document.getElementById('md-filename').value=`${c.code.toLowerCase()}/${slug}.html`;
+}
+document.getElementById('md-name').addEventListener('input',autoFilename);
+document.getElementById('md-date').addEventListener('change',autoFilename);
+
+function saveDist(){
+  const name=document.getElementById('md-name').value.trim();
+  const clientId=document.getElementById('md-client-id').value;
+  if(!name){alert('Distribution name is required.');return;}
+  const data={clientId,name,
+    date:document.getElementById('md-date').value,
+    status:document.getElementById('md-status').value,
+    url:document.getElementById('md-url').value.trim(),
+    filename:document.getElementById('md-filename').value.trim(),
+    digitalId:document.getElementById('md-digital-id').value.trim(),
+    mailId:document.getElementById('md-mail-id').value.trim(),
+    pct:parseInt(document.getElementById('md-pct').value)||0,
+    notes:document.getElementById('md-notes').value.trim(),
+  };
+  if(editDistId){
+    const i=S.distributions.findIndex(x=>x.id===editDistId);
+    if(i>-1) S.distributions[i]={...S.distributions[i],...data};
+  } else {
+    S.distributions.push({id:uid(),...data});
+    OPEN.add(clientId);
+  }
+  persist();render();closeModal('modal-dist');
+}
+
+function delDist(id){
+  const d=S.distributions.find(x=>x.id===id);
+  if(!confirm(`Delete distribution "${d.name}"?`)) return;
+  S.distributions=S.distributions.filter(x=>x.id!==id);
+  persist();render();
+}
+
+// ════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open');}));
+
+function copyText(text){
+  if(!text) return;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn=event.currentTarget;
+    const orig=btn.innerHTML;
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
+    btn.style.color='var(--green-text)';
+    setTimeout(()=>{btn.innerHTML=orig;btn.style.color='';},1600);
+  });
+}
+
+document.getElementById('search').addEventListener('input',e=>{ search=e.target.value; render(); });
+
+// Boot
+load(); render();
+</script>
+</body>
+</html>
