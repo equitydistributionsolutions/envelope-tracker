@@ -150,8 +150,7 @@ tbody tr:hover{background:var(--surface2)}
 </header>
 
 <!-- BANNERS -->
-<div class="banner banner-demo show" id="banner-demo">
-  🟡 <div><strong>Preview mode</strong> — This dashboard will display live data once connected.</div>
+<div class="banner banner-demo" id="banner-demo" style="display:none">
 </div>
 <div class="banner banner-error" id="banner-error">
   ⚠️ <div id="banner-error-msg">Could not load data.</div>
@@ -307,7 +306,7 @@ const CONFIG = {
 };
 // ════════════════════════════════════════════════════════
 
-const IS_DEMO = CONFIG.DIGITAL_SHEET_URL === 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTJ5EHEfk_S2pL2x25QanDMtNtez1gSdV22s-3u9qUQ1KHKmOwhS4IjiuI-dcKD2eaJfcog6uunIZAe/pub?gid=0&single=true&output=csv';
+const IS_DEMO = false;
 
 // ── Class colour palette (cycles for unlimited classes) ───────
 const PALETTE = [
@@ -380,10 +379,8 @@ function parseCSV(text){
 }
 
 async function fetchCSV(url){
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 12000);
-  const res = await fetch(url, {signal: ctrl.signal});
-  clearTimeout(t);
+  const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Request timed out')),12000));
+  const res=await Promise.race([fetch(url),timeout]);
   if(!res.ok) throw new Error(`HTTP ${res.status}`);
   return parseCSV(await res.text());
 }
@@ -624,16 +621,6 @@ async function loadData(){
   document.getElementById('refresh-ts').textContent='Refreshing…';
   document.getElementById('banner-error').classList.remove('show');
 
-  if(IS_DEMO){
-    document.getElementById('banner-demo').classList.add('show');
-    renderDigitalDemo(DEMO_DIGITAL);
-    renderMailClasses(DEMO_CLASSES);
-    document.getElementById('refresh-ts').textContent='Demo · '+nowStr();
-    document.getElementById('footer-ts').textContent='Demo mode · '+nowStr();
-    return;
-  }
-
-  document.getElementById('banner-demo').classList.remove('show');
   try{
     const [digitalRows,mailRows]=await Promise.all([
       fetchCSV(CONFIG.DIGITAL_SHEET_URL),
