@@ -307,7 +307,7 @@ const CONFIG = {
 };
 // ════════════════════════════════════════════════════════
 
-const IS_DEMO = CONFIG.DIGITAL_SHEET_ID === 'PASTE_YOUR_DIGITAL_SHEET_ID_HERE';
+const IS_DEMO = CONFIG.DIGITAL_SHEET_URL === 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTJ5EHEfk_S2pL2x25QanDMtNtez1gSdV22s-3u9qUQ1KHKmOwhS4IjiuI-dcKD2eaJfcog6uunIZAe/pub?gid=0&single=true&output=csv';
 
 // ── Class colour palette (cycles for unlimited classes) ───────
 const PALETTE = [
@@ -379,11 +379,10 @@ function parseCSV(text){
   }).filter(r=>Object.values(r).some(v=>v!==''));
 }
 
-async function fetchCSV(id,gid){
-  const url=`https://docs.google.com/spreadsheets/d/${id}/pub?gid=${gid}&single=true&output=csv`;
-  const ctrl=new AbortController();
-  const t=setTimeout(()=>ctrl.abort(),12000);
-  const res=await fetch(url,{signal:ctrl.signal});
+async function fetchCSV(url){
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 12000);
+  const res = await fetch(url, {signal: ctrl.signal});
   clearTimeout(t);
   if(!res.ok) throw new Error(`HTTP ${res.status}`);
   return parseCSV(await res.text());
@@ -637,8 +636,8 @@ async function loadData(){
   document.getElementById('banner-demo').classList.remove('show');
   try{
     const [digitalRows,mailRows]=await Promise.all([
-      fetchCSV(CONFIG.DIGITAL_SHEET_ID, CONFIG.DIGITAL_GID),
-      fetchCSV(CONFIG.MAIL_SHEET_ID,    CONFIG.MAIL_GID),
+      fetchCSV(CONFIG.DIGITAL_SHEET_URL),
+      fetchCSV(CONFIG.MAIL_SHEET_URL),
     ]);
     renderDigital(digitalRows);
     renderMailClasses(parseMailClasses(mailRows));
