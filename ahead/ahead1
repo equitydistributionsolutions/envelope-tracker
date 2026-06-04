@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AHEAD — Digital Envelopes</title>
+<style>
+:root{
+  --bg:#f7f6f3;--surface:#fff;--surface2:#f1efea;--surface3:#e8e6e0;
+  --border:rgba(0,0,0,0.08);--text:#1a1a18;--muted:#6b6b67;--hint:#b0afa9;
+  --accent:#185fa5;--accent-light:#e6f1fb;
+  --blue-fill:#e6f1fb;--blue-text:#0c447c;
+  --amber-fill:#faeeda;--amber-text:#633806;
+  --green-fill:#eaf3de;--green-text:#27500a;
+  --coral-fill:#faece7;--coral-text:#712b13;
+  --teal-fill:#e1f5ee;--teal-text:#085041;
+  --radius:10px;--radius-sm:6px;--radius-xs:4px;
+  --shadow:0 1px 3px rgba(0,0,0,0.07),0 1px 2px rgba(0,0,0,0.04);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;min-height:100vh}
+.page{max-width:960px;margin:0 auto;padding:2rem 1.5rem 4rem}
+
+/* Header */
+.site-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2rem;gap:1rem;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-logo{width:42px;height:42px;border-radius:var(--radius-sm);background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700;flex-shrink:0}
+.brand-text h1{font-size:20px;font-weight:600;letter-spacing:-.3px}
+.brand-text p{font-size:13px;color:var(--muted);margin-top:2px}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.live-pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:4px 11px;border-radius:20px;background:var(--green-fill);color:var(--green-text);border:1px solid rgba(39,80,10,.15)}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--green-text);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.refresh-ts{font-size:11px;color:var(--hint)}
+
+/* Error banner */
+.banner{display:none;align-items:flex-start;gap:10px;padding:14px 16px;border-radius:var(--radius-sm);margin-bottom:1.5rem;font-size:13px;line-height:1.6;border:1px solid rgba(113,43,19,.15);background:var(--coral-fill);color:var(--coral-text)}
+.banner.show{display:flex}
+
+/* Metrics */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1.75rem}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.metric-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+.metric-value{font-size:30px;font-weight:600;letter-spacing:-.5px;line-height:1}
+.metric-sub{font-size:12px;margin-top:5px;color:var(--muted)}
+.metric-sub.good{color:var(--green-text)}
+.metric-sub.warn{color:var(--amber-text)}
+.metric-sub.bad{color:var(--coral-text)}
+
+/* Progress */
+.progress-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);margin-bottom:1.75rem}
+.progress-card h3{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:14px}
+.bar-group{margin-bottom:10px}
+.bar-group:last-child{margin-bottom:0}
+.bar-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px}
+.bar-track{height:8px;border-radius:4px;background:var(--surface2);overflow:hidden;border:1px solid var(--border)}
+.bar-fill{height:100%;border-radius:4px;transition:width 1s cubic-bezier(.4,0,.2,1)}
+
+/* Section head */
+.section-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 10px}
+.section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);display:flex;align-items:center;gap:8px}
+.section-label::before{content:'';display:block;width:3px;height:14px;border-radius:2px;background:var(--accent)}
+.count-badge{font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;background:var(--surface2);color:var(--muted)}
+
+/* Table */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border)}
+tbody td{padding:12px 16px;border-bottom:1px solid var(--border);vertical-align:top}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--surface2)}
+.name-primary{font-weight:500}
+.name-secondary{font-size:12px;color:var(--muted);margin-top:2px}
+.mono{font-family:'SF Mono','Fira Code',monospace;font-size:12px;color:var(--muted)}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.badge-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.badge-completed{background:var(--green-fill);color:var(--green-text)}
+.badge-sent{background:var(--blue-fill);color:var(--blue-text)}
+.badge-cancelled{background:var(--coral-fill);color:var(--coral-text)}
+.cancel-note{font-size:11px;color:var(--coral-text);margin-top:3px;font-style:italic}
+
+/* Footer */
+.footer{margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.footer p{font-size:12px;color:var(--hint)}
+
+/* Loading skeleton */
+.skeleton-row td{padding:14px 16px}
+.skel{height:13px;border-radius:4px;background:linear-gradient(90deg,var(--surface2) 25%,var(--surface3) 50%,var(--surface2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel-sm{width:60%}
+.skel-xs{width:35%}
+
+@media(max-width:600px){
+  .metrics{grid-template-columns:1fr 1fr}
+  table{font-size:12px}
+  thead th,tbody td{padding:8px 10px}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="brand">
+    <div class="brand-logo">A</div>
+    <div class="brand-text">
+      <h1>AHEAD — Digital Envelopes</h1>
+      <p id="brand-sub">May 29, 2026 Distribution</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-pill"><div class="pulse"></div>Live</div>
+    <div class="refresh-ts" id="refresh-ts">Connecting…</div>
+  </div>
+</header>
+
+<!-- ERROR BANNER -->
+<div class="banner" id="banner-error">
+  ⚠️ <span id="banner-msg">Could not load data. Please try refreshing.</span>
+</div>
+
+<!-- METRICS -->
+<div class="metrics">
+  <div class="metric">
+    <div class="metric-label">Total envelopes</div>
+    <div class="metric-value" id="m-total">—</div>
+    <div class="metric-sub">this distribution</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">Completed</div>
+    <div class="metric-value" id="m-completed">—</div>
+    <div class="metric-sub good" id="m-completed-pct"></div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">Sent</div>
+    <div class="metric-value" id="m-sent">—</div>
+    <div class="metric-sub warn">awaiting signature</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">Cancelled</div>
+    <div class="metric-value" id="m-cancelled">—</div>
+    <div class="metric-sub bad" id="m-cancelled-sub"></div>
+  </div>
+</div>
+
+<!-- PROGRESS BAR -->
+<div class="progress-card">
+  <h3>Envelope progress</h3>
+  <div class="bar-group">
+    <div class="bar-meta"><span>Completed</span><span id="bl-completed">0 of 0</span></div>
+    <div class="bar-track"><div class="bar-fill" id="bar-completed" style="width:0%;background:#3b6d11"></div></div>
+  </div>
+  <div class="bar-group">
+    <div class="bar-meta"><span>Sent (awaiting)</span><span id="bl-sent">0 of 0</span></div>
+    <div class="bar-track"><div class="bar-fill" id="bar-sent" style="width:0%;background:#185fa5"></div></div>
+  </div>
+  <div class="bar-group">
+    <div class="bar-meta"><span>Cancelled</span><span id="bl-cancelled">0 of 0</span></div>
+    <div class="bar-track"><div class="bar-fill" id="bar-cancelled" style="width:0%;background:#993c1d"></div></div>
+  </div>
+</div>
+
+<!-- TABLE -->
+<div class="section-head">
+  <div class="section-label">All digital envelopes</div>
+  <span class="count-badge" id="ct-total">—</span>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th style="width:32%">Candidate(s)</th>
+        <th style="width:14%">Status</th>
+        <th style="width:22%">Date signed / sent</th>
+        <th style="width:18%">Envelope ID</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+      <!-- skeleton -->
+      <tr class="skeleton-row"><td><div class="skel"></div></td><td><div class="skel skel-xs"></div></td><td><div class="skel skel-sm"></div></td><td><div class="skel skel-sm"></div></td><td><div class="skel skel-xs"></div></td></tr>
+      <tr class="skeleton-row"><td><div class="skel skel-sm"></div></td><td><div class="skel skel-xs"></div></td><td><div class="skel skel-sm"></div></td><td><div class="skel skel-sm"></div></td><td><div class="skel skel-xs"></div></td></tr>
+      <tr class="skeleton-row"><td><div class="skel"></div></td><td><div class="skel skel-xs"></div></td><td><div class="skel skel-sm"></div></td><td><div class="skel skel-sm"></div></td><td><div class="skel skel-xs"></div></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<footer class="footer">
+  <p>AHEAD · Digital Envelopes · May 29, 2026 Distribution</p>
+  <p id="footer-ts">—</p>
+</footer>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  CONFIG — paste your published CSV URL below
+// ══════════════════════════════════════════════
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTJ5EHEfk_S2pL2x25QanDMtNtez1gSdV22s-3u9qUQ1KHKmOwhS4IjiuI-dcKD2eaJfcog6uunIZAe/pub?gid=0&single=true&output=csv';
+const REFRESH_SECONDS = 30;
+// ══════════════════════════════════════════════
+
+// ── Utilities ────────────────────────────────
+function fmtDate(raw){
+  if(!raw||!raw.trim()||raw.trim().toLowerCase()==='nat') return '—';
+  const d=new Date(raw);
+  if(isNaN(d)) return raw;
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function badge(cls,label){
+  return `<span class="badge ${cls}"><span class="badge-dot"></span>${label}</span>`;
+}
+
+function pct(n,t){ return t?Math.round(n/t*100):0; }
+
+function nowStr(){
+  return new Date().toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+// ── CSV parser ────────────────────────────────
+function parseCSV(text){
+  const lines=text.trim().split('\n');
+  if(lines.length<2) return [];
+  const headers=lines[0].split(',').map(h=>h.replace(/^"|"$/g,'').trim());
+  return lines.slice(1).map(line=>{
+    const vals=[];let cur='',inQ=false;
+    for(const ch of line){
+      if(ch==='"'){inQ=!inQ}
+      else if(ch===','&&!inQ){vals.push(cur.trim());cur='';}
+      else cur+=ch;
+    }
+    vals.push(cur.trim());
+    const obj={};
+    headers.forEach((h,i)=>obj[h]=(vals[i]||'').replace(/^"|"$/g,''));
+    return obj;
+  }).filter(r=>Object.values(r).some(v=>v!==''));
+}
+
+// ── Fetch ─────────────────────────────────────
+async function fetchSheet(){
+  const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('Request timed out')),12000));
+  const res=await Promise.race([fetch(SHEET_URL),timeout]);
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  return parseCSV(await res.text());
+}
+
+// ── Render ────────────────────────────────────
+function render(rows){
+  let completed=0, sent=0, cancelled=0;
+
+  const html=rows.map(r=>{
+    // Support both "Candidate::Name" and plain "Name"
+    const rawName = r['Candidate::Name']||r['Name']||r['Candidate Name']||'—';
+    const names   = rawName.split(',').map(n=>n.trim()).filter(Boolean);
+    const n1      = names[0]||'—';
+    const n2      = names.slice(1).join(', ');
+
+    const status  = (r['Document Status']||r['Status']||'').toLowerCase().trim();
+    const dateRaw = (r['Date Signed']||r['Date']||'').replace(/^Sent\s*-\s*/i,'').split(',')[0];
+    const envId   = (r['Envelope ID']||'').split('-').slice(0,2).join('-');
+    const envDisp = envId ? envId+'…' : '—';
+    const note    = r['Notes']||r['Note']||'';
+
+    let bdg;
+    if(status==='completed'||status==='complete'){
+      completed++;
+      bdg=badge('badge-completed','Completed');
+    } else if(status==='cancelled'||status==='canceled'){
+      cancelled++;
+      bdg=badge('badge-cancelled','Cancelled');
+    } else {
+      // treat everything else (sent, delivered, voided, etc.) as Sent
+      sent++;
+      bdg=badge('badge-sent', status==='voided'?'Voided':status==='delivered'?'Delivered':'Sent');
+    }
+
+    return `<tr>
+      <td>
+        <div class="name-primary">${n1}</div>
+        ${n2?`<div class="name-secondary">${n2}</div>`:''}
+      </td>
+      <td>${bdg}</td>
+      <td style="font-size:12px;color:var(--muted)">${fmtDate(dateRaw)}</td>
+      <td class="mono">${envDisp}</td>
+      <td>${note?`<div class="cancel-note">${note}</div>`:'<span style="color:var(--hint)">—</span>'}</td>
+    </tr>`;
+  }).join('');
+
+  const total=rows.length;
+
+  // Table
+  document.getElementById('tbody').innerHTML = html ||
+    '<tr><td colspan="5" style="padding:24px 16px;color:var(--muted);text-align:center">No records found in sheet.</td></tr>';
+  document.getElementById('ct-total').textContent=`${total} envelope${total!==1?'s':''}`;
+
+  // Metrics
+  document.getElementById('m-total').textContent=total;
+  document.getElementById('m-completed').textContent=completed;
+  document.getElementById('m-completed-pct').textContent=`${pct(completed,total)}% of total`;
+  document.getElementById('m-sent').textContent=sent;
+  document.getElementById('m-cancelled').textContent=cancelled;
+  document.getElementById('m-cancelled-sub').textContent=cancelled>0?`${pct(cancelled,total)}% of total`:'none';
+
+  // Progress bars
+  document.getElementById('bl-completed').textContent=`${completed} of ${total}`;
+  document.getElementById('bl-sent').textContent=`${sent} of ${total}`;
+  document.getElementById('bl-cancelled').textContent=`${cancelled} of ${total}`;
+  document.getElementById('bar-completed').style.width=pct(completed,total)+'%';
+  document.getElementById('bar-sent').style.width=pct(sent,total)+'%';
+  document.getElementById('bar-cancelled').style.width=pct(cancelled,total)+'%';
+}
+
+// ── Load ──────────────────────────────────────
+async function loadData(){
+  document.getElementById('refresh-ts').textContent='Refreshing…';
+  document.getElementById('banner-error').classList.remove('show');
+  try{
+    const rows=await fetchSheet();
+    render(rows);
+    const ts=nowStr();
+    document.getElementById('refresh-ts').textContent='Updated '+ts;
+    document.getElementById('footer-ts').textContent='Last refreshed: '+ts;
+  } catch(err){
+    document.getElementById('banner-error').classList.add('show');
+    document.getElementById('banner-msg').textContent=`Could not load data: ${err.message}. Please try refreshing the page.`;
+    document.getElementById('refresh-ts').textContent='Error — retrying in '+REFRESH_SECONDS+'s';
+    console.error('Tracker error:',err);
+  }
+}
+
+// ── Boot ──────────────────────────────────────
+loadData();
+setInterval(loadData, REFRESH_SECONDS*1000);
+</script>
+</body>
+</html>
