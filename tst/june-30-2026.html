@@ -204,7 +204,7 @@ tbody tr:hover{background:var(--surface2)}
 </div>
 
 <!-- ══════════════════════════════════════
-     SHEET 1 — DIGITAL ENVELOPES
+     SHEET 1 - DIGITAL ENVELOPES
 ══════════════════════════════════════ -->
 <div class="sheet-block">
   <div class="sheet-divider">
@@ -223,22 +223,22 @@ tbody tr:hover{background:var(--surface2)}
   <div class="metrics">
     <div class="metric">
       <div class="metric-label">Total envelopes</div>
-      <div class="metric-value" id="d-total">—</div>
+      <div class="metric-value" id="d-total">-</div>
       <div class="metric-sub">digital only</div>
     </div>
     <div class="metric">
       <div class="metric-label">Completed</div>
-      <div class="metric-value" id="d-completed">—</div>
+      <div class="metric-value" id="d-completed">-</div>
       <div class="metric-sub good" id="d-completed-pct"></div>
     </div>
     <div class="metric">
       <div class="metric-label">Sent</div>
-      <div class="metric-value" id="d-sent">—</div>
+      <div class="metric-value" id="d-sent">-</div>
       <div class="metric-sub warn">awaiting signature</div>
     </div>
     <div class="metric">
       <div class="metric-label">Cancelled</div>
-      <div class="metric-value" id="d-pending">—</div>
+      <div class="metric-value" id="d-pending">-</div>
       <div class="metric-sub warn">with cancellation note</div>
     </div>
   </div>
@@ -265,7 +265,7 @@ tbody tr:hover{background:var(--surface2)}
   <!-- Digital table -->
   <div class="section-head">
     <div class="section-label">All digital envelopes</div>
-    <span class="count-badge" id="ct-digital">—</span>
+    <span class="count-badge" id="ct-digital">-</span>
   </div>
   <div class="table-wrap">
     <table>
@@ -284,7 +284,7 @@ tbody tr:hover{background:var(--surface2)}
 </div>
 
 <!-- ══════════════════════════════════════
-     SHEET 2 — PHYSICAL MAIL
+     SHEET 2 - PHYSICAL MAIL
 ══════════════════════════════════════ -->
 <div class="sheet-block">
   <div class="sheet-divider">
@@ -303,22 +303,22 @@ tbody tr:hover{background:var(--surface2)}
   <div class="metrics">
     <div class="metric">
       <div class="metric-label">Total records</div>
-      <div class="metric-value" id="m-total">—</div>
+      <div class="metric-value" id="m-total">-</div>
       <div class="metric-sub">physical mail only</div>
     </div>
     <div class="metric">
       <div class="metric-label">Completed / received</div>
-      <div class="metric-value" id="m-done">—</div>
+      <div class="metric-value" id="m-done">-</div>
       <div class="metric-sub good" id="m-done-pct"></div>
     </div>
     <div class="metric">
       <div class="metric-label">Pending</div>
-      <div class="metric-value" id="m-pending">—</div>
+      <div class="metric-value" id="m-pending">-</div>
       <div class="metric-sub warn">not yet done</div>
     </div>
     <div class="metric">
       <div class="metric-label">Classes</div>
-      <div class="metric-value" id="m-classes">—</div>
+      <div class="metric-value" id="m-classes">-</div>
       <div class="metric-sub">detected in sheet</div>
     </div>
   </div>
@@ -333,13 +333,13 @@ tbody tr:hover{background:var(--surface2)}
 
 <footer class="footer">
   <p id="footer-left">Envelope Tracker</p>
-  <p id="footer-ts">—</p>
+  <p id="footer-ts">-</p>
 </footer>
 </div>
 
 <script>
 // ════════════════════════════════════════════════════════
-//  ★  CONFIG — update these values for each distribution
+//  ★  CONFIG - update these values for each distribution
 // ════════════════════════════════════════════════════════
 const CONFIG = {
   CLIENT_NAME:       'Tst Logistics',
@@ -392,7 +392,7 @@ const DEMO_CLASSES = [
 
 // ── Utilities ─────────────────────────────────────────────────
 function fmtDate(raw){
-  if(!raw||raw==='NaT'||!raw.trim()||raw.trim().toLowerCase()==='x') return '—';
+  if(!raw||raw==='NaT'||!raw.trim()||raw.trim().toLowerCase()==='x') return '-';
   const d=new Date(raw);
   if(isNaN(d)) return raw;
   return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
@@ -456,14 +456,14 @@ function parseMailClasses(rows){
 }
 
 // ════════════════════════════════════════════════
-//  RENDER — DIGITAL (Sheet 1)
+//  RENDER - DIGITAL (Sheet 1)
 // ════════════════════════════════════════════════
 function renderDigital(rows){
   let completed=0, sent=0, cancelled=0;
   const html=rows.map(r=>{
     const rawNames=r['Candidate::Name']||r['Name']||'';
     const names=rawNames.split(',').map(n=>n.trim()).filter(Boolean);
-    const n1=names[0]||'—', n2=names.slice(1).join(', ');
+    const n1=names[0]||'-', n2=names.slice(1).join(', ');
     const status=(r['Document Status']||'').toLowerCase().trim();
     const note=r['Notes']||r['Note']||'';
     let bdg;
@@ -478,7 +478,7 @@ function renderDigital(rows){
       <td>${bdg}</td>
       <td style="color:var(--muted);font-size:12px">${fmtDate(dateRaw)}</td>
       <td class="mono">${envId}</td>
-      <td>${note?`<span class="cancel-note">${note}</span>`:'<span style="color:var(--hint)">—</span>'}</td>
+      <td>${note?`<span class="cancel-note">${note}</span>`:'<span style="color:var(--hint)">-</span>'}</td>
     </tr>`;
   }).join('');
 
@@ -514,7 +514,7 @@ function renderDigitalDemo(rows){
       <td>${bdg}</td>
       <td style="color:var(--muted);font-size:12px">${fmtDate(r.date)}</td>
       <td class="mono">${r.envId}</td>
-      <td>${r.note?`<span class="cancel-note">${r.note}</span>`:'<span style="color:var(--hint)">—</span>'}</td>
+      <td>${r.note?`<span class="cancel-note">${r.note}</span>`:'<span style="color:var(--hint)">-</span>'}</td>
     </tr>`;
   }).join('');
   const total=rows.length;
@@ -535,7 +535,7 @@ function renderDigitalDemo(rows){
 }
 
 // ════════════════════════════════════════════════
-//  RENDER — MAIL CLASSES (Sheet 2)
+//  RENDER - MAIL CLASSES (Sheet 2)
 // ════════════════════════════════════════════════
 function renderMailClasses(classes){
   const grid=document.getElementById('mail-progress-grid');
@@ -554,7 +554,7 @@ function renderMailClasses(classes){
         const raw=r.done!==undefined?r.done:isX(r['Mail Date']||'');
         const isDone=raw===true||raw===1;
         if(isDone) done++;
-        const nm=r.name||r['Name']||'—';
+        const nm=r.name||r['Name']||'-';
         return `<tr>
           <td class="name-primary" style="width:70%">${nm}</td>
           <td>${isDone?badge('badge-completed','Completed'):badge('badge-pending','Pending')}</td>
@@ -573,7 +573,7 @@ function renderMailClasses(classes){
 
       sectionsHTML+=`
         <div class="section-head">
-          <div class="section-label">${cls.label} — completion status</div>
+          <div class="section-label">${cls.label} - completion status</div>
           <span class="count-badge">${rows.length} record${rows.length!==1?'s':''}</span>
         </div>
         <div class="table-wrap">
@@ -587,9 +587,9 @@ function renderMailClasses(classes){
       // Mail class: full tracking columns
       let mailed=0;
       const rowHTML=rows.map(r=>{
-        const nm=r.name||r['Name']||'—';
+        const nm=r.name||r['Name']||'-';
         const md=r.mailDate||r['Mail Date']||'';
-        const tr=r.tracking||r['Tracking Number']||'—';
+        const tr=r.tracking||r['Tracking Number']||'-';
         const irs=r.irsReceived||r['IRS Received']||'';
         const hasMail=isRealDate(md);
         const hasIRS=irs&&irs!=='NaT'&&irs.trim()&&!isX(irs);
@@ -598,7 +598,7 @@ function renderMailClasses(classes){
         return `<tr>
           <td class="name-primary">${nm}</td>
           <td style="font-size:12px;color:var(--muted)">${hasMail?fmtDate(md):badge('badge-pending','Not mailed')}</td>
-          <td class="mono">${hasMail?tr:'—'}</td>
+          <td class="mono">${hasMail?tr:'-'}</td>
           <td>${hasIRS?badge('badge-received',fmtDate(irs)):badge('badge-pending','Pending')}</td>
         </tr>`;
       }).join('');
@@ -620,7 +620,7 @@ function renderMailClasses(classes){
 
       sectionsHTML+=`
         <div class="section-head">
-          <div class="section-label">${cls.label} — mail tracking</div>
+          <div class="section-label">${cls.label} - mail tracking</div>
           <span class="count-badge">${rows.length} record${rows.length!==1?'s':''}</span>
         </div>
         <div class="table-wrap">
@@ -661,7 +661,7 @@ function applyBranding(){
   document.getElementById('dig-sheet-sub').textContent=`${CONFIG.DISTRIBUTION_NAME} - digital signatures`;
   document.getElementById('mail-sheet-sub').textContent=`${CONFIG.DISTRIBUTION_NAME} - physical mail`;
   document.getElementById('footer-left').textContent=`${CONFIG.CLIENT_NAME} · ${CONFIG.DISTRIBUTION_NAME}`;
-  document.title=`${CONFIG.CLIENT_NAME} — ${CONFIG.DISTRIBUTION_NAME}`;
+  document.title=`${CONFIG.CLIENT_NAME} - ${CONFIG.DISTRIBUTION_NAME}`;
 }
 
 // ── Main load ─────────────────────────────────────────────────
@@ -682,7 +682,7 @@ async function loadData(){
   }catch(err){
     document.getElementById('banner-error').classList.add('show');
     document.getElementById('banner-error-msg').textContent=`Could not load data: ${err.message}. Check Sheet IDs and confirm sheets are published as CSV.`;
-    document.getElementById('refresh-ts').textContent='Error — retrying in '+CONFIG.REFRESH_SECONDS+'s';
+    document.getElementById('refresh-ts').textContent='Error - retrying in '+CONFIG.REFRESH_SECONDS+'s';
     console.error('Tracker error:',err);
   }
 }
@@ -743,7 +743,7 @@ setInterval(()=>{
       (remember ? localStorage : sessionStorage).setItem(KEY, payload);
       showDashboard(true);
     } else {
-      err.textContent = 'Incorrect password — please try again.';
+      err.textContent = 'Incorrect password - please try again.';
       const inp = document.getElementById('pw-input');
       inp.value = '';
       inp.classList.add('shake');
