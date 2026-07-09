@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Envelope Tracker Hub — Internal · EDS</title>
+<style>
+:root {
+  --bg:#f7f6f3; --surface:#fff; --surface2:#f1efea; --surface3:#e8e6e0;
+  --border:rgba(0,0,0,0.08); --text:#1a1a18; --muted:#6b6b67; --hint:#b0afa9;
+  --accent:#0f6e56; --accent-light:#e1f5ee; --accent-text:#085041;
+  --blue-fill:#e6f1fb; --blue-text:#0c447c;
+  --amber-fill:#faeeda; --amber-text:#633806;
+  --green-fill:#eaf3de; --green-text:#27500a;
+  --coral-fill:#faece7; --coral-text:#712b13;
+  --purple-fill:#f0ebfa; --purple-text:#4a1d8a;
+  --teal-fill:#e0f4f1; --teal-text:#0d6d5e;
+  --radius:10px; --radius-sm:6px; --radius-xs:4px;
+  --shadow:0 1px 3px rgba(0,0,0,0.07),0 1px 2px rgba(0,0,0,0.04);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;min-height:100vh}
+.page{max-width:1040px;margin:0 auto;padding:2.5rem 1.5rem 5rem}
+
+/* Header */
+.site-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2rem;gap:1rem;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:14px}
+.brand-logo{width:44px;height:44px;border-radius:var(--radius-sm);background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700;flex-shrink:0}
+.brand-text h1{font-size:21px;font-weight:600;letter-spacing:-.3px}
+.brand-text p{font-size:13px;color:var(--muted);margin-top:2px}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.internal-pill{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;padding:4px 10px;border-radius:20px;background:var(--amber-fill);color:var(--amber-text);border:1px solid rgba(133,79,11,.15)}
+
+/* Stats */
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1rem}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.stat-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+.stat-value{font-size:26px;font-weight:600;letter-spacing:-.5px;line-height:1}
+.stat-sub{font-size:12px;color:var(--muted);margin-top:4px}
+.stat-accent{border-left:3px solid var(--accent)}
+.stat-amber{border-left:3px solid #e09a20}
+.stat-blue{border-left:3px solid #185fa5}
+
+/* Active distributions panel */
+.active-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:1rem;overflow:hidden}
+.active-panel-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+.active-panel-header:hover{background:var(--surface2)}
+.active-panel-title{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.pulse{width:8px;height:8px;border-radius:50%;background:#27a060;box-shadow:0 0 0 0 rgba(39,160,96,.4);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(39,160,96,.4)}70%{box-shadow:0 0 0 8px rgba(39,160,96,0)}100%{box-shadow:0 0 0 0 rgba(39,160,96,0)}}
+.active-table{width:100%;border-collapse:collapse}
+.active-table th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:8px 16px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface2)}
+.active-table td{font-size:13px;padding:10px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
+.active-table tr:last-child td{border-bottom:none}
+.active-table tr:hover td{background:var(--surface2)}
+.cost-chip{font-size:12px;font-weight:600;padding:3px 9px;border-radius:20px;background:var(--teal-fill);color:var(--teal-text)}
+.cost-total-row td{background:var(--accent-light);font-weight:600;color:var(--accent-text)}
+
+/* Client financials summary */
+.client-fin{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap}
+.client-fin-item{font-size:11px;color:var(--muted)}
+.client-fin-profit{font-weight:600}
+.client-fin-sep{font-size:11px;color:var(--hint)}
+
+/* Chart section */
+.chart-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:1rem;overflow:hidden}
+.chart-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+.chart-header:hover{background:var(--surface2)}
+.chart-toggle{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
+.chart-toggle-btn{font-size:11px;font-weight:500;padding:4px 12px;background:transparent;border:none;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.chart-toggle-btn.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.chart-toggle-btn:hover:not(.active){color:var(--text)}
+.chart-title{font-size:13px;font-weight:600}
+.chart-bars{display:flex;flex-direction:column;gap:10px}
+.chart-bar-row{display:grid;grid-template-columns:180px 1fr 80px;align-items:center;gap:12px}
+.chart-bar-label{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chart-bar-track{height:20px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.chart-bar-fill{height:100%;border-radius:4px;transition:width .6s ease;display:flex;align-items:center;padding-left:8px}
+.chart-bar-inner{font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden}
+.chart-bar-val{font-size:12px;font-weight:600;color:var(--text);text-align:right}
+.chart-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.chart-empty{padding:40px;text-align:center;color:var(--hint);font-size:13px}
+
+/* Toolbar */
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+.toolbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);display:flex;align-items:center;gap:8px}
+.section-label::before{content:'';display:block;width:3px;height:14px;border-radius:2px;background:var(--accent)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;padding:7px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;transition:background .15s;white-space:nowrap;font-family:inherit;text-decoration:none}
+.btn:hover{background:var(--surface2)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:#0d5e49}
+.btn-sm{font-size:12px;padding:5px 11px}
+.btn svg,.icon-btn svg{width:14px;height:14px;flex-shrink:0}
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:var(--radius-xs);border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;font-family:inherit;text-decoration:none}
+.icon-btn:hover{background:var(--surface2);color:var(--text)}
+.icon-btn.danger:hover{background:var(--coral-fill);color:var(--coral-text);border-color:transparent}
+.icon-btn.mail-btn:hover{background:var(--blue-fill);color:var(--blue-text);border-color:transparent}
+
+/* Search */
+.search-wrap{position:relative}
+.search-wrap svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--hint);pointer-events:none;width:13px;height:13px}
+#search{font-size:13px;padding:7px 12px 7px 30px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);outline:none;width:210px;font-family:inherit}
+#search:focus{border-color:var(--accent)}
+
+/* Client group */
+.client-group{margin-bottom:10px}
+.client-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);cursor:pointer;user-select:none;transition:background .15s}
+.client-header:hover{background:var(--surface2)}
+.client-header.open{border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom-color:transparent}
+.client-header-left{display:flex;align-items:center;gap:12px;min-width:0}
+.client-avatar{width:36px;height:36px;border-radius:var(--radius-xs);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;letter-spacing:-.5px}
+.client-name{font-size:15px;font-weight:600;letter-spacing:-.2px}
+.client-meta{font-size:12px;color:var(--muted);margin-top:1px}
+.client-header-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.client-pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px}
+.pill-active{background:var(--green-fill);color:var(--green-text)}
+.pill-archived{background:var(--surface2);color:var(--muted)}
+.pill-draft{background:var(--blue-fill);color:var(--blue-text)}
+.chevron{width:16px;height:16px;color:var(--hint);transition:transform .2s;flex-shrink:0}
+.chevron.open{transform:rotate(180deg)}
+.client-actions{display:flex;gap:5px}
+
+/* Panel */
+.panel{border:1px solid var(--border);border-top:none;border-bottom-left-radius:var(--radius);border-bottom-right-radius:var(--radius);background:var(--surface);overflow:hidden;display:none}
+.panel.open{display:block}
+.panel-toolbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border)}
+.panel-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+
+/* Distribution rows */
+.dist-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start;padding:14px 16px;border-bottom:1px solid var(--border);transition:background .12s}
+.dist-row:last-child{border-bottom:none}
+.dist-row:hover{background:var(--surface2)}
+.dist-left{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dist-name{font-size:14px;font-weight:600;letter-spacing:-.1px}
+.dist-meta{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.dist-meta-item{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px}
+.dist-meta-item svg{width:11px;height:11px;flex-shrink:0}
+
+/* Named links row — the 5 specific link types */
+.dist-links-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.link-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;padding:3px 9px;border-radius:4px;text-decoration:none;white-space:nowrap;border:1px solid transparent;transition:opacity .15s}
+.link-chip:hover{opacity:.8}
+.link-chip-dashboard{background:#e1f5ee;color:#085041;border-color:rgba(8,80,65,.15)}
+.link-chip-folder{background:#e6f1fb;color:#0c447c;border-color:rgba(12,68,124,.15)}
+.link-chip-tracker{background:#eaf3de;color:#27500a;border-color:rgba(39,80,10,.15)}
+.link-chip-irs{background:#faeeda;color:#633806;border-color:rgba(133,79,11,.15)}
+.link-chip-cover{background:#f0ebfa;color:#4a1d8a;border-color:rgba(74,29,138,.15)}
+.link-chip svg{width:10px;height:10px;flex-shrink:0}
+
+/* Live stats strip */
+.live-strip{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px;padding:7px 10px;background:var(--surface2);border-radius:6px;border:1px solid var(--border)}
+.live-stat{font-size:11px;display:flex;align-items:center;gap:5px}
+.live-stat-label{color:var(--muted)}
+.live-stat-val{font-weight:600}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--hint)}
+.live-fetching{font-size:11px;color:var(--hint);font-style:italic;display:flex;align-items:center;gap:6px}
+.live-error{font-size:11px;color:var(--coral-text)}
+.spinner{width:10px;height:10px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.refresh-btn{font-size:10px;color:var(--accent);cursor:pointer;background:none;border:none;padding:0 2px;font-family:inherit;text-decoration:underline}
+
+.dist-right-col{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.prog{width:90px}
+.prog-label{font-size:11px;color:var(--muted);text-align:right;margin-bottom:3px}
+.prog-track{height:5px;border-radius:3px;background:var(--surface3);overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .6s ease}
+.dist-actions{display:flex;gap:5px}
+.dist-financials{font-size:11px;color:var(--muted);text-align:right;line-height:1.6}
+.dist-profit-pos{color:var(--green-text);font-weight:600}
+.dist-profit-neg{color:var(--coral-text);font-weight:600}
+.audit-line{font-size:10px;color:var(--hint);display:flex;align-items:center;gap:4px;margin-top:2px}
+.audit-line svg{width:10px;height:10px;flex-shrink:0}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:3px 8px;border-radius:20px;white-space:nowrap}
+.badge-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.badge-active{background:var(--green-fill);color:var(--green-text)}
+.badge-archived{background:var(--surface2);color:var(--muted)}
+.badge-draft{background:var(--blue-fill);color:var(--blue-text)}
+
+/* Empty states */
+.empty-page{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-page svg{width:44px;height:44px;margin:0 auto 12px;opacity:.25;display:block}
+.empty-page p{font-size:14px;margin-bottom:16px}
+.empty-panel{padding:18px 16px;color:var(--muted);font-size:13px;text-align:center}
+
+/* Modals */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:28px;width:100%;max-width:560px;box-shadow:0 20px 60px rgba(0,0,0,.15);max-height:90vh;overflow-y:auto}
+.modal h2{font-size:17px;font-weight:600;margin-bottom:3px}
+.modal-sub{font-size:13px;color:var(--muted);margin-bottom:22px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.form-group input,.form-group select,.form-group textarea{width:100%;font-size:13px;padding:8px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);outline:none;font-family:inherit}
+.form-group textarea{resize:vertical;min-height:70px;line-height:1.5}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent)}
+.form-hint{font-size:11px;color:var(--hint);margin-top:4px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.form-divider{height:1px;background:var(--border);margin:18px 0}
+.form-section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.form-section-title::before{content:'';display:block;width:3px;height:12px;border-radius:2px;background:var(--accent)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+.modal-wide{max-width:680px}
+
+/* Color swatches */
+.swatches{display:flex;gap:8px;flex-wrap:wrap}
+.swatch{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .15s,border-color .15s}
+.swatch:hover{transform:scale(1.12)}
+.swatch.selected{border-color:var(--text);transform:scale(1.1)}
+
+/* Send links modal */
+.link-preview-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px}
+.link-preview-label{font-size:12px;font-weight:600;flex:1;min-width:0;display:flex;align-items:center;gap:6px}
+.link-preview-label span{font-size:10px;padding:2px 6px;border-radius:3px}
+.link-preview-url{font-size:11px;font-family:monospace;color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+.links-preview{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;font-size:13px;line-height:1.8;margin-bottom:14px;max-height:260px;overflow-y:auto;white-space:pre-wrap;font-family:inherit}
+
+/* How it works */
+.how-it-works{margin-top:1rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.how-it-works summary{padding:16px 20px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);list-style:none;display:flex;align-items:center;gap:8px;user-select:none}
+.how-it-works summary:hover{background:var(--surface2)}
+.how-body{padding:20px;border-top:1px solid var(--border);display:grid;gap:12px}
+.how-row{display:flex;gap:12px;font-size:13px;color:var(--muted);line-height:1.6}
+.how-icon{font-size:16px;flex-shrink:0;width:24px;text-align:center}
+.how-row strong{color:var(--text);font-weight:600}
+
+/* Sync */
+.code-area{font-family:'SF Mono','Fira Code',monospace;font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;width:100%;min-height:80px;resize:vertical;color:var(--text);outline:none}
+
+/* Footer */
+.footer{margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.footer p{font-size:12px;color:var(--hint)}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--text);color:#fff;font-size:13px;padding:10px 18px;border-radius:var(--radius-sm);box-shadow:0 4px 20px rgba(0,0,0,.2);z-index:1000;transform:translateY(20px);opacity:0;transition:all .25s;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+
+@media(max-width:640px){
+  .stats-bar{grid-template-columns:1fr 1fr}
+  .client-pills{display:none}
+  .prog{display:none}
+  #search{width:100%}
+  .form-row,.form-row-3{grid-template-columns:1fr}
+  .chart-bar-row{grid-template-columns:90px 1fr 60px}
+  .active-table .hide-mobile{display:none}
+  .dist-links-grid .link-chip{font-size:10px;padding:2px 7px}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ═══ HEADER ═══ -->
+<header class="site-header">
+  <div class="brand">
+    <div class="brand-logo">ET</div>
+    <div class="brand-text">
+      <h1>Envelope Tracker Hub</h1>
+      <p>All clients &amp; distributions · Internal management</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="btn btn-sm" onclick="openSyncModal('export')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export
+    </button>
+    <button class="btn btn-sm" onclick="openSyncModal('import')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Import
+    </button>
+    <span class="internal-pill">⚙ Internal only</span>
+  </div>
+</header>
+
+<!-- ═══ GLOBAL STATS ═══ -->
+<div class="stats-bar">
+  <div class="stat stat-accent"><div class="stat-label">Clients</div><div class="stat-value" id="gs-clients">0</div><div class="stat-sub">total accounts</div></div>
+  <div class="stat"><div class="stat-label">Distributions</div><div class="stat-value" id="gs-dists">0</div><div class="stat-sub">all time</div></div>
+  <div class="stat"><div class="stat-label">Active</div><div class="stat-value" id="gs-active">0</div><div class="stat-sub">live dashboards</div></div>
+  <div class="stat stat-amber"><div class="stat-label">Active revenue</div><div class="stat-value" id="gs-active-rev">$0</div><div class="stat-sub">billed — active dists</div></div>
+  <div class="stat stat-blue"><div class="stat-label">Total billed</div><div class="stat-value" id="gs-revenue">$0</div><div class="stat-sub">all distributions</div></div>
+  <div class="stat"><div class="stat-label">Archived</div><div class="stat-value" id="gs-archived">0</div><div class="stat-sub">completed</div></div>
+</div>
+
+<!-- ═══ ACTIVE DISTRIBUTIONS PANEL ═══ -->
+<div class="active-panel">
+  <div class="active-panel-header" onclick="toggleActivePanel()">
+    <div class="active-panel-title">
+      <span class="pulse"></span>
+      Active distributions at a glance
+    </div>
+    <svg id="active-chev" class="chevron open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+  </div>
+  <div id="active-panel-body">
+    <table class="active-table">
+      <thead><tr>
+        <th>Distribution</th><th>Client</th>
+        <th class="hide-mobile">Date</th>
+        <th>Billed</th><th>Done</th>
+      </tr></thead>
+      <tbody id="active-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ PROFIT CHART ═══ -->
+<div class="chart-section">
+  <div class="chart-header" onclick="toggleChart()">
+    <span class="chart-title">📊 Profit breakdown</span>
+    <div style="display:flex;align-items:center;gap:10px" onclick="event.stopPropagation()">
+      <div class="chart-toggle" id="chart-toggle">
+        <button class="chart-toggle-btn active" id="ct-company" onclick="setChartView('company')">By company</button>
+        <button class="chart-toggle-btn" id="ct-dist" onclick="setChartView('dist')">By distribution</button>
+      </div>
+      <svg id="chart-chev" class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+  </div>
+  <div id="chart-body" style="display:none;padding:20px">
+    <div class="chart-bars" id="chart-bars"></div>
+    <div class="chart-legend" id="chart-legend"></div>
+  </div>
+</div>
+
+<!-- ═══ TOOLBAR ═══ -->
+<div class="toolbar">
+  <div class="section-label">Clients &amp; distributions</div>
+  <div class="toolbar-right">
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="search" placeholder="Search clients or distributions…">
+    </div>
+    <button class="btn btn-primary" onclick="openClientModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      Add client
+    </button>
+  </div>
+</div>
+
+<!-- ═══ CLIENT LIST ═══ -->
+<div id="client-list"></div>
+<div id="empty-page" style="display:none">
+  <div class="empty-page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <p>No clients yet. Add your first client to get started.</p>
+    <button class="btn btn-primary" onclick="openClientModal()">Add client</button>
+  </div>
+</div>
+
+<!-- ═══ HOW IT WORKS ═══ -->
+<details class="how-it-works">
+  <summary>❓ How it works</summary>
+  <div class="how-body">
+    <div class="how-row"><span class="how-icon">🔗</span><div><strong>5 named links per distribution:</strong> Dashboard (= the GitHub Pages tracker), Project Folder (Google Drive), Tracker Sheet (digital envelopes), IRS Tracker (mail / IRS), and IRS Cover Letter folder. The mail icon opens a pre-filled email with all five links.</div></div>
+    <div class="how-row"><span class="how-icon">📊</span><div><strong>Live completion from Google Sheets:</strong> When the Tracker Sheet URL and IRS Tracker URL are entered, this hub fetches live row data. Digital counts "Completed" rows; Mail counts rows with a date in "Mail Date". Fetches on page load and whenever you click Refresh.</div></div>
+    <div class="how-row"><span class="how-icon">💰</span><div><strong>Profit:</strong> Cost = Rate × Envelope count. Profit = Revenue − Cost. The profit chart and stats update as you add data.</div></div>
+    <div class="how-row"><span class="how-icon">♻️</span><div><strong>Export / Import</strong> to back up to a file or sync data across computers.</div></div>
+  </div>
+</details>
+
+<footer class="footer">
+  <p>Envelope Tracker Hub · Internal only · EDS</p>
+  <p id="footer-ts">—</p>
+</footer>
+</div>
+
+<!-- ═══ MODAL: Client ═══ -->
+<div class="modal-overlay" id="modal-client">
+  <div class="modal">
+    <h2 id="mc-title">Add client</h2>
+    <div class="modal-sub">Client details — distributions are added separately.</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Client name *</label>
+        <input type="text" id="mc-name" placeholder="e.g. AHEAD, RJW, Thrive">
+      </div>
+      <div class="form-group">
+        <label>Short code *</label>
+        <input type="text" id="mc-code" placeholder="e.g. AHEAD" maxlength="8">
+        <div class="form-hint">Used in file paths — no spaces</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Contact / notes</label>
+      <input type="text" id="mc-notes" placeholder="e.g. Jane Doe · jane@example.com">
+    </div>
+    <div class="form-group">
+      <label>Accent color</label>
+      <div class="swatches" id="swatches">
+        <button class="swatch" data-color="#0f6e56" style="background:#0f6e56"></button>
+        <button class="swatch" data-color="#185fa5" style="background:#185fa5"></button>
+        <button class="swatch" data-color="#854f0b" style="background:#854f0b"></button>
+        <button class="swatch" data-color="#712b13" style="background:#712b13"></button>
+        <button class="swatch" data-color="#4a1d8a" style="background:#4a1d8a"></button>
+        <button class="swatch" data-color="#1a5276" style="background:#1a5276"></button>
+        <button class="swatch" data-color="#633806" style="background:#633806"></button>
+        <button class="swatch" data-color="#2e4057" style="background:#2e4057"></button>
+      </div>
+      <input type="hidden" id="mc-color" value="#0f6e56">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-client')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveClient()">Save client</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Distribution ═══ -->
+<div class="modal-overlay" id="modal-dist">
+  <div class="modal modal-wide">
+    <h2 id="md-title">Add distribution</h2>
+    <div class="modal-sub">Adding to <strong id="md-client-label">—</strong></div>
+    <input type="hidden" id="md-client-id">
+
+    <div class="form-section-title">Basic info</div>
+    <div class="form-group">
+      <label>Distribution name *</label>
+      <input type="text" id="md-name" placeholder="e.g. June 11, 2026 Distribution">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="md-date">
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="md-status">
+          <option value="active">Active</option>
+          <option value="draft">Draft</option>
+          <option value="archived">Archived</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-divider"></div>
+    <div class="form-section-title">🔗 Links</div>
+
+    <div class="form-group">
+      <label>🟢 Dashboard URL <span style="font-weight:400;text-transform:none;letter-spacing:0">(GitHub Pages · also used as Digital view)</span></label>
+      <input type="text" id="md-url" placeholder="https://equitydistributionsolutions.github.io/envelope-tracker/rjw/june-11-2026">
+      <div class="form-hint">The GitHub Pages URL shared with the client. Also serves as the digital-only link.</div>
+    </div>
+    <div class="form-group">
+      <label>📁 Project Folder URL <span style="font-weight:400;text-transform:none;letter-spacing:0">(Google Drive folder)</span></label>
+      <input type="text" id="md-url-folder" placeholder="https://drive.google.com/drive/folders/…">
+    </div>
+    <div class="form-group">
+      <label>📋 Tracker Sheet URL <span style="font-weight:400;text-transform:none;letter-spacing:0">(digital envelopes · Google Sheet)</span></label>
+      <input type="text" id="md-url-tracker" placeholder="https://docs.google.com/spreadsheets/d/…">
+      <div class="form-hint">Paste the full Google Sheets share URL. Used for live completion fetching.</div>
+    </div>
+    <div class="form-group">
+      <label>🟠 IRS Tracker URL <span style="font-weight:400;text-transform:none;letter-spacing:0">(mail sheet · Google Sheet)</span></label>
+      <input type="text" id="md-url-irs" placeholder="https://docs.google.com/spreadsheets/d/…">
+      <div class="form-hint">Paste the full Google Sheets share URL. Used for live mail completion fetching.</div>
+    </div>
+    <div class="form-group">
+      <label>📂 IRS Cover Letter Folder URL <span style="font-weight:400;text-transform:none;letter-spacing:0">(Google Drive folder)</span></label>
+      <input type="text" id="md-url-cover" placeholder="https://drive.google.com/drive/folders/…">
+    </div>
+
+    <div class="form-divider"></div>
+    <div class="form-section-title">💰 Billing</div>
+    <div class="form-group">
+      <label>Amount billed to client ($)</label>
+      <input type="number" id="md-revenue" min="0" step="0.01" placeholder="0.00">
+      <div class="form-hint">Total amount charged to this client for this distribution</div>
+    </div>
+
+    <div class="form-divider"></div>
+    <div class="form-section-title">Tracking</div>
+    <div class="form-group">
+      <label>Filename (auto-generated)</label>
+      <input type="text" id="md-filename" readonly style="background:var(--surface2);color:var(--muted)">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Completion % <span style="font-weight:400;text-transform:none;letter-spacing:0">(manual override)</span></label>
+        <input type="number" id="md-pct" min="0" max="100" value="0">
+        <div class="form-hint">Overridden by live sheet data when available</div>
+      </div>
+      <div class="form-group">
+        <label>Updated by</label>
+        <input type="text" id="md-updated-by" placeholder="Your name or initials">
+        <div class="form-hint">Recorded with timestamp on save</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <input type="text" id="md-notes" placeholder="e.g. 11 envelopes · Q2 cohort">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-dist')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveDist()">Save distribution</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Send Links ═══ -->
+<div class="modal-overlay" id="modal-links">
+  <div class="modal modal-wide">
+    <h2 id="ml-title">Send distribution links</h2>
+    <div class="modal-sub" id="ml-sub"></div>
+    <div id="ml-links-list" style="margin-bottom:14px"></div>
+    <div class="form-group">
+      <label>Recipient email(s)</label>
+      <input type="text" id="ml-to" placeholder="stakeholder@example.com, another@example.com">
+    </div>
+    <div class="form-group">
+      <label>Email preview</label>
+      <div class="links-preview" id="ml-preview"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-links')">Close</button>
+      <button class="btn" onclick="copyLinksText()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy links
+      </button>
+      <button class="btn btn-primary" onclick="openMailto()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Open in email
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Sync ═══ -->
+<div class="modal-overlay" id="modal-sync">
+  <div class="modal modal-wide">
+    <h2 id="ms-title">Export data</h2>
+    <div class="modal-sub" id="ms-sub"></div>
+    <div class="form-group">
+      <textarea class="code-area" id="ms-data" rows="12" placeholder="JSON will appear here…"></textarea>
+    </div>
+    <div id="ms-import-hint" style="display:none">
+      <div style="background:var(--amber-fill);color:var(--amber-text);border:1px solid rgba(133,79,11,.2);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;margin-bottom:14px">
+        ⚠️ Importing will <strong>replace all current data</strong>. Export first as a backup.
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-sync')">Close</button>
+      <button class="btn" id="ms-copy-btn" onclick="copySyncData()">Copy JSON</button>
+      <button class="btn btn-primary" id="ms-action-btn" onclick="doSyncAction()">Export</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════
+//  STORAGE  (bump key to v5 — new link fields)
+// ════════════════════════════════════════
+const KEY = 'et_hub_v5';
+const SEED = {
+  clients:[
+    {id:'c-ahead', name:'AHEAD',  code:'AHEAD',  color:'#0f6e56', notes:''},
+    {id:'c-rjw',   name:'RJW',    code:'RJW',    color:'#185fa5', notes:''},
+    {id:'c-thrive',name:'Thrive', code:'THRIVE', color:'#4a1d8a', notes:''},
+  ],
+  distributions:[
+    {id:'d-1',clientId:'c-ahead',name:'May 29, 2026 Distribution',date:'2026-05-29',status:'active',
+     url:'https://equitydistributionsolutions.github.io/envelope-tracker/ahead/may-29-2026',
+     urlFolder:'',urlTracker:'',urlIrs:'',urlCover:'',
+     filename:'ahead/may-29-2026.html',pct:36,
+     revenue:450,
+     notes:'4 digital · 7 physical',updatedBy:'Admin',updatedAt:'2026-05-29T14:32:00Z'},
+    {id:'d-2',clientId:'c-ahead',name:'Mar 25, 2026 Distribution',date:'2026-03-25',status:'archived',
+     url:'https://equitydistributionsolutions.github.io/envelope-tracker/ahead/mar-25-2026',
+     urlFolder:'',urlTracker:'',urlIrs:'',urlCover:'',
+     filename:'ahead/mar-25-2026.html',pct:100,
+     revenue:350,
+     notes:'Class A & B completed',updatedBy:'Admin',updatedAt:'2026-03-26T09:10:00Z'},
+    {id:'d-3',clientId:'c-rjw',name:'June 11, 2026 Distribution',date:'2026-06-11',status:'active',
+     url:'https://equitydistributionsolutions.github.io/envelope-tracker/rjw/june-11-2026',
+     urlFolder:'https://drive.google.com/drive/folders/1AmnrEY8EeDYAW9y1nzFJ4uIPhOkmGk11?usp=sharing',
+     urlTracker:'https://docs.google.com/spreadsheets/d/1nGIoEVAnoTg279LG8yBMRz8wliuOfzlh7KL-zANP88g/edit?usp=sharing',
+     urlIrs:'https://docs.google.com/spreadsheets/d/1Mu8AUAUuth6DAprsw3QuU0rFG8tqcmZCTcwSToaV2ls/edit?usp=sharing',
+     urlCover:'https://drive.google.com/drive/folders/1jTs8HWNYee2amvnNjzEdK-8Xb2YrUdSw?usp=sharing',
+     filename:'rjw/june-11-2026.html',pct:0,
+     revenue:0,
+     notes:'',updatedBy:'',updatedAt:''},
+    {id:'d-4',clientId:'c-thrive',name:'May 15, 2026 Distribution',date:'2026-05-15',status:'active',
+     url:'https://equitydistributionsolutions.github.io/envelope-tracker/thrive/may-15-2026',
+     urlFolder:'',urlTracker:'',urlIrs:'',urlCover:'',
+     filename:'thrive/may-15-2026.html',pct:60,
+     revenue:320,
+     notes:'8 envelopes',updatedBy:'Admin',updatedAt:'2026-05-16T11:00:00Z'},
+  ]
+};
+
+let S={clients:[],distributions:[]};
+let editClientId=null,editDistId=null,search='';
+let syncMode='export',sendLinksDistId=null;
+const OPEN=new Set();
+let activePanelOpen=true,chartOpen=false;
+
+// Live sheet cache: distId -> {digitalStats, mailStats, fetchedAt, fetching, error}
+const LIVE={};
+
+function load(){
+  try{ const r=localStorage.getItem(KEY); S=r?JSON.parse(r):{...SEED}; }
+  catch{ S={...SEED}; }
+  S.distributions=S.distributions.map(d=>migrate(d));
+}
+
+function migrate(d){
+  const out={
+    urlFolder:'', urlTracker:'', urlIrs:'', urlCover:'',
+    revenue:0, updatedBy:'', updatedAt:'',
+    ...d
+  };
+  if(!out.urlTracker && d.urlDigital) out.urlTracker=d.urlDigital;
+  return out;
+}
+
+function persist(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch{} }
+function uid(){ return 'x'+Date.now()+Math.random().toString(36).slice(2,5); }
+
+// ════════════════════════════════════════
+//  LIVE SHEET FETCHING
+// ════════════════════════════════════════
+
+// Extract spreadsheet ID from a full Google Sheets URL
+function extractSheetId(url){
+  if(!url) return null;
+  const m=url.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+  return m?m[1]:null;
+}
+
+// Given any Google Sheets URL (share link OR published CSV link), return the best CSV fetch URL.
+// If the user pasted a published /pub?output=csv URL → use it directly (that IS the CSV endpoint).
+// If they pasted a regular /edit share URL → build the export URL (requires "Anyone with link" sharing).
+function toCsvFetchUrl(url){
+  if(!url) return null;
+  url=url.trim();
+  // Already a published CSV URL
+  if(url.includes('/pub') && url.includes('output=csv')) return url;
+  // Published URL without output=csv param — add it
+  if(url.includes('/pub')){
+    const sep=url.includes('?')?'&':'?';
+    return url+sep+'output=csv';
+  }
+  // Regular share/edit URL — extract ID and use export endpoint
+  const id=extractSheetId(url);
+  if(!id) return null;
+  return `https://docs.google.com/spreadsheets/d/${id}/export?format=csv`;
+}
+
+// Minimal CSV parser (handles quoted fields)
+function parseCSV(text){
+  const rows=[];
+  const lines=text.split(/\r?\n/);
+  for(const line of lines){
+    if(!line.trim()) continue;
+    const cols=[];
+    let inQ=false,cur='';
+    for(let i=0;i<line.length;i++){
+      const ch=line[i];
+      if(ch==='"'&&!inQ){inQ=true;}
+      else if(ch==='"'&&inQ&&line[i+1]==='"'){cur+='"';i++;}
+      else if(ch==='"'&&inQ){inQ=false;}
+      else if(ch===','&&!inQ){cols.push(cur);cur='';}
+      else{cur+=ch;}
+    }
+    cols.push(cur);
+    rows.push(cols);
+  }
+  return rows;
+}
+
+// Fetch with 12s timeout (Promise.race — no AbortController to avoid DataCloneError)
+// Route through CORS proxy since Google Sheets blocks direct browser requests
+const CORS_PROXY = 'https://corsproxy.io/?';
+async function fetchCSV(url){
+  const proxied = CORS_PROXY + encodeURIComponent(url);
+  const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timed out after 12s')),12000));
+  const res=await Promise.race([fetch(proxied,{cache:'no-store'}),timeout]);
+  if(!res.ok) throw new Error(`HTTP ${res.status} from proxy — check sheet is publicly shared`);
+  return parseCSV(await res.text());
+}
+
+// Parse digital sheet: count rows by Document Status
+function parseDigitalStats(rows){
+  if(!rows||rows.length<2) return null;
+  const header=rows[0].map(h=>h.trim().toLowerCase());
+  const statusCol=header.findIndex(h=>h.includes('document status')||h==='status');
+  if(statusCol<0) return null;
+  let total=0,completed=0,sent=0,cancelled=0;
+  for(let i=1;i<rows.length;i++){
+    const row=rows[i];
+    if(!row||!row[0]||!row[0].trim()) continue;
+    total++;
+    const st=(row[statusCol]||'').trim().toLowerCase();
+    if(st==='completed') completed++;
+    else if(st==='sent') sent++;
+    else if(st==='cancelled'||st==='canceled') cancelled++;
+  }
+  return{total,completed,sent,cancelled};
+}
+
+// Parse mail/IRS sheet: count rows with a date in "Mail Date" column (simple or class-based)
+function parseMailStats(rows){
+  if(!rows||rows.length<2) return null;
+  const header=rows[0].map(h=>h.trim().toLowerCase());
+  // Look for "mail date" or "date signed" or "date mailed"
+  let dateCol=header.findIndex(h=>h.includes('mail date')||h.includes('date mailed'));
+  if(dateCol<0) dateCol=header.findIndex(h=>h.includes('date'));
+  if(dateCol<0) dateCol=1; // fallback to col 2
+  let total=0,mailed=0;
+  for(let i=1;i<rows.length;i++){
+    const row=rows[i];
+    if(!row) continue;
+    const name=(row[0]||'').trim();
+    // Skip class divider rows (e.g. "CLASS A", "CLASS B")
+    if(/^class\s+[a-z]/i.test(name)||!name) continue;
+    total++;
+    const dateVal=(row[dateCol]||'').trim().toLowerCase();
+    // Mailed if: has a real date (not 'x', not empty, not 'pending')
+    if(dateVal&&dateVal!=='x'&&dateVal!=='pending'&&dateVal!=='—'&&dateVal!=='-') mailed++;
+    // Some sheets use 'x' to indicate completion for simple classes
+    else if(dateVal==='x') mailed++;
+  }
+  return{total,mailed};
+}
+
+// Fetch live stats for a single distribution
+async function fetchLive(distId){
+  const d=S.distributions.find(x=>x.id===distId);
+  if(!d) return;
+  const digUrl=toCsvFetchUrl(d.urlTracker);
+  const mailUrl=toCsvFetchUrl(d.urlIrs);
+  if(!digUrl&&!mailUrl) return;
+
+  LIVE[distId]={...(LIVE[distId]||{}),fetching:true,error:null};
+  updateLiveStrip(distId);
+
+  try{
+    const [digRows,mailRows]=await Promise.all([
+      digUrl?fetchCSV(digUrl):Promise.resolve(null),
+      mailUrl?fetchCSV(mailUrl):Promise.resolve(null),
+    ]);
+    LIVE[distId]={
+      fetching:false,
+      fetchedAt:new Date(),
+      digitalStats:digRows?parseDigitalStats(digRows):null,
+      mailStats:mailRows?parseMailStats(mailRows):null,
+      error:null,
+    };
+  } catch(e){
+    LIVE[distId]={...(LIVE[distId]||{}),fetching:false,error:e.message};
+  }
+  updateLiveStrip(distId);
+  renderActivePanel(S.distributions.filter(x=>x.status==='active'));
+}
+
+function updateLiveStrip(distId){
+  const el=document.getElementById('live-'+distId);
+  if(!el) return;
+  el.innerHTML=buildLiveStripHTML(distId);
+}
+
+function buildLiveStripHTML(distId){
+  const d=S.distributions.find(x=>x.id===distId);
+  if(!d) return '';
+  const digUrl=toCsvFetchUrl(d.urlTracker);
+  const mailUrl=toCsvFetchUrl(d.urlIrs);
+  if(!digUrl&&!mailUrl) return '';
+
+  const cache=LIVE[distId];
+  if(!cache){
+    return `<div class="live-strip"><span class="live-fetching"><span class="spinner"></span>Loading live data…</span></div>`;
+  }
+  if(cache.fetching){
+    return `<div class="live-strip"><span class="live-fetching"><span class="spinner"></span>Fetching from Google Sheets…</span></div>`;
+  }
+  if(cache.error){
+    return `<div class="live-strip"><span class="live-error">⚠ ${esc(cache.error)}. <button class="refresh-btn" onclick="fetchLive('${distId}')">Retry</button></span></div>`;
+  }
+
+  const parts=[];
+  if(cache.digitalStats){
+    const ds=cache.digitalStats;
+    parts.push(`<span class="live-stat"><span class="live-stat-label">Digital:</span> <span class="live-stat-val" style="color:var(--green-text)">${ds.completed} completed</span></span>`);
+    if(ds.sent) parts.push(`<span class="live-stat"><span class="live-stat-val" style="color:var(--blue-text)">${ds.sent} sent</span></span>`);
+    if(ds.cancelled) parts.push(`<span class="live-stat"><span class="live-stat-val" style="color:var(--coral-text)">${ds.cancelled} cancelled</span></span>`);
+    parts.push(`<span class="live-stat"><span class="live-stat-label">of ${ds.total} total</span></span>`);
+  }
+  if(cache.digitalStats&&cache.mailStats) parts.push(`<span class="live-dot"></span>`);
+  if(cache.mailStats){
+    const ms=cache.mailStats;
+    parts.push(`<span class="live-stat"><span class="live-stat-label">Mail:</span> <span class="live-stat-val" style="color:var(--teal-text)">${ms.mailed} mailed</span> <span class="live-stat-label">of ${ms.total}</span></span>`);
+  }
+
+  const ts=cache.fetchedAt?cache.fetchedAt.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}):'';
+  parts.push(`<button class="refresh-btn" onclick="fetchLive('${distId}')">↻ Refresh</button>`);
+  if(ts) parts.push(`<span class="live-stat"><span class="live-stat-label">as of ${ts}</span></span>`);
+
+  return `<div class="live-strip">${parts.join('')}</div>`;
+}
+
+// Compute live overall pct for a distribution (digital completed + mail mailed over total)
+function livePct(distId){
+  const cache=LIVE[distId];
+  if(!cache||cache.fetching||cache.error) return null;
+  const ds=cache.digitalStats;
+  const ms=cache.mailStats;
+  if(!ds&&!ms) return null;
+  const done=(ds?ds.completed:0)+(ms?ms.mailed:0);
+  const tot=(ds?ds.total:0)+(ms?ms.total:0);
+  return tot>0?Math.round(done/tot*100):0;
+}
+
+// ════════════════════════════════════════
+//  FINANCIALS  (revenue only — amount billed to client)
+// ════════════════════════════════════════
+function calcRevenue(d){ return parseFloat(d.revenue)||0; }
+function fmt$(n){ return '$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}); }
+
+// Per-client rollup — total billed across all distributions
+function clientFinancials(clientId){
+  const dists=S.distributions.filter(d=>d.clientId===clientId);
+  const revenue=dists.reduce((s,d)=>s+calcRevenue(d),0);
+  return{revenue,count:dists.length};
+}
+
+// ════════════════════════════════════════
+//  RENDER
+// ════════════════════════════════════════
+function render(){
+  const q=search.toLowerCase();
+  const visClients=S.clients.filter(c=>{
+    if(!q) return true;
+    if(c.name.toLowerCase().includes(q)||c.code.toLowerCase().includes(q)) return true;
+    return S.distributions.some(d=>d.clientId===c.id&&(d.name.toLowerCase().includes(q)||(d.notes||'').toLowerCase().includes(q)));
+  });
+
+  const activeDists=S.distributions.filter(d=>d.status==='active');
+  const totalRevenue=S.distributions.reduce((s,d)=>s+calcRevenue(d),0);
+  const activeRevenue=activeDists.reduce((s,d)=>s+calcRevenue(d),0);
+  document.getElementById('gs-clients').textContent=S.clients.length;
+  document.getElementById('gs-dists').textContent=S.distributions.length;
+  document.getElementById('gs-active').textContent=activeDists.length;
+  document.getElementById('gs-archived').textContent=S.distributions.filter(d=>d.status==='archived').length;
+  document.getElementById('gs-revenue').textContent=fmt$(totalRevenue);
+  document.getElementById('gs-active-rev').textContent=fmt$(activeRevenue);
+
+  renderActivePanel(activeDists);
+  if(chartOpen) renderChart();
+
+  const list=document.getElementById('client-list');
+  const empty=document.getElementById('empty-page');
+  if(!visClients.length){ list.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+
+  list.innerHTML=visClients.map(c=>{
+    const dists=S.distributions.filter(d=>{
+      if(d.clientId!==c.id) return false;
+      if(!q) return true;
+      return d.name.toLowerCase().includes(q)||(d.notes||'').toLowerCase().includes(q)||
+             c.name.toLowerCase().includes(q)||c.code.toLowerCase().includes(q);
+    });
+    const act=dists.filter(d=>d.status==='active').length;
+    const arc=dists.filter(d=>d.status==='archived').length;
+    const drf=dists.filter(d=>d.status==='draft').length;
+    const isOpen=OPEN.has(c.id)||!!q;
+    const ini=c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const fin=clientFinancials(c.id);
+    const finHtml=fin.count&&fin.revenue?`<div class="client-fin">
+      <span class="client-fin-item" style="color:var(--accent-text);font-weight:600">${fmt$(fin.revenue)} billed</span>
+      <span class="client-fin-sep">across ${fin.count} distribution${fin.count!==1?'s':''}</span>
+    </div>`:'';
+    return `
+    <div class="client-group" id="cg-${c.id}">
+      <div class="client-header${isOpen?' open':''}" onclick="toggle('${c.id}')" id="ch-${c.id}">
+        <div class="client-header-left">
+          <div class="client-avatar" style="background:${c.color}">${ini}</div>
+          <div>
+            <div class="client-name">${c.name}</div>
+            <div class="client-meta">${dists.length} distribution${dists.length!==1?'s':''} · <span style="font-family:monospace;font-size:11px">${c.code.toLowerCase()}/</span>${c.notes?' · '+c.notes:''}</div>
+            ${finHtml}
+          </div>
+        </div>
+        <div class="client-header-right">
+          <div class="client-pills">
+            ${act?`<span class="pill pill-active">${act} active</span>`:''}
+            ${drf?`<span class="pill pill-draft">${drf} draft</span>`:''}
+            ${arc?`<span class="pill pill-archived">${arc} archived</span>`:''}
+          </div>
+          <div class="client-actions" onclick="event.stopPropagation()">
+            <button class="icon-btn" onclick="openClientModal('${c.id}')" title="Edit client">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="icon-btn danger" onclick="delClient('${c.id}')" title="Delete client">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </button>
+          </div>
+          <svg class="chevron${isOpen?' open':''}" id="chev-${c.id}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="panel${isOpen?' open':''}" id="dp-${c.id}">
+        <div class="panel-toolbar">
+          <span class="panel-label">${c.name} distributions</span>
+          <button class="btn btn-sm btn-primary" onclick="openDistModal('${c.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+            Add distribution
+          </button>
+        </div>
+        ${dists.length?dists.map(d=>distRow(d,c)).join(''):`<div class="empty-panel">No distributions yet.</div>`}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('footer-ts').textContent='Updated: '+new Date().toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function distRow(d,c){
+  const pct=livePct(d.id)??d.pct??0;
+  const dateStr=d.date?new Date(d.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—';
+  const bc=d.status==='active'?'badge-active':d.status==='draft'?'badge-draft':'badge-archived';
+  const bl=d.status==='active'?'Active':d.status==='draft'?'Draft':'Archived';
+  const revenue=calcRevenue(d);
+
+  // 5 named link chips
+  const chips=[];
+  if(d.url) chips.push(`<a href="${esc(d.url)}" class="link-chip link-chip-dashboard" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Dashboard</a>`);
+  if(d.urlFolder) chips.push(`<a href="${esc(d.urlFolder)}" class="link-chip link-chip-folder" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Project Folder</a>`);
+  if(d.urlTracker) chips.push(`<a href="${esc(d.urlTracker)}" class="link-chip link-chip-tracker" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Tracker Sheet</a>`);
+  if(d.urlIrs) chips.push(`<a href="${esc(d.urlIrs)}" class="link-chip link-chip-irs" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>IRS Tracker</a>`);
+  if(d.urlCover) chips.push(`<a href="${esc(d.urlCover)}" class="link-chip link-chip-cover" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>IRS Cover Letter</a>`);
+
+  // audit
+  let auditHtml='';
+  if(d.updatedBy||d.updatedAt){
+    const timeStr=d.updatedAt?fmtAuditDate(d.updatedAt):'';
+    auditHtml=`<div class="audit-line">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      ${d.updatedBy?esc(d.updatedBy):''}${d.updatedBy&&timeStr?' · ':''}${timeStr}
+    </div>`;
+  }
+
+  // live strip placeholder (filled by fetchLive)
+  const hasSheets=toCsvFetchUrl(d.urlTracker)||toCsvFetchUrl(d.urlIrs);
+  const liveHtml=hasSheets?`<div id="live-${d.id}">${buildLiveStripHTML(d.id)}</div>`:'';
+
+  return `<div class="dist-row">
+    <div class="dist-left">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span class="dist-name">${esc(d.name)}</span>
+        <span class="badge ${bc}"><span class="badge-dot"></span>${bl}</span>
+      </div>
+      <div class="dist-meta">
+        <span class="dist-meta-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          ${dateStr}
+        </span>
+        ${d.notes?`<span class="dist-meta-item">${esc(d.notes)}</span>`:''}
+        ${revenue?`<span class="dist-meta-item" style="color:var(--accent-text);font-weight:500">${fmt$(revenue)} billed</span>`:''}
+      </div>
+      ${chips.length?`<div class="dist-links-grid">${chips.join('')}</div>`:'<span style="font-size:11px;color:var(--hint)">No links yet — edit to add</span>'}
+      ${liveHtml}
+      ${auditHtml}
+    </div>
+    <div class="dist-right-col">
+      <div class="dist-actions">
+        <button class="icon-btn mail-btn" onclick="openSendLinks('${d.id}')" title="Send links by email">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </button>
+        ${d.url?`<a href="${esc(d.url)}" class="icon-btn" target="_blank" rel="noopener" title="Open dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>`:''}
+        <button class="icon-btn" onclick="openDistModal('${d.clientId}','${d.id}')" title="Edit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="icon-btn danger" onclick="delDist('${d.id}')" title="Delete">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
+      </div>
+      <div class="prog">
+        <div class="prog-label">${pct}% done</div>
+        <div class="prog-track"><div class="prog-fill" style="width:${pct}%;background:${c.color}"></div></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderActivePanel(activeDists){
+  const tbody=document.getElementById('active-tbody');
+  if(!activeDists.length){
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--hint);padding:20px;font-size:13px">No active distributions</td></tr>';
+    return;
+  }
+  let total=0;
+  const rows=activeDists.map(d=>{
+    const c=S.clients.find(x=>x.id===d.clientId);
+    const rev=calcRevenue(d);
+    total+=rev;
+    const pct=livePct(d.id)??d.pct??0;
+    const dateStr=d.date?new Date(d.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—';
+    return `<tr>
+      <td><strong>${esc(d.name)}</strong></td>
+      <td><span style="color:${c?c.color:'var(--accent)'};font-weight:600">${c?esc(c.name):'—'}</span></td>
+      <td class="hide-mobile">${dateStr}</td>
+      <td>${rev?`<span class="cost-chip">${fmt$(rev)}</span>`:'—'}</td>
+      <td>${pct}%</td>
+    </tr>`;
+  }).join('');
+  tbody.innerHTML=rows+`<tr class="cost-total-row">
+    <td colspan="3"><strong>Total active billed</strong></td>
+    <td colspan="2"><strong>${fmt$(total)}</strong></td>
+  </tr>`;
+}
+
+let chartView='company'; // 'company' | 'dist'
+
+function setChartView(v){
+  chartView=v;
+  document.getElementById('ct-company').classList.toggle('active',v==='company');
+  document.getElementById('ct-dist').classList.toggle('active',v==='dist');
+  renderChart();
+}
+
+function renderChart(){
+  const bars=document.getElementById('chart-bars');
+  const legend=document.getElementById('chart-legend');
+
+  if(chartView==='company'){
+    const clients=S.clients.filter(c=>S.distributions.some(d=>d.clientId===c.id&&d.revenue));
+    if(!clients.length){
+      bars.innerHTML='<div class="chart-empty">Add billing amounts to distributions to see revenue by company.</div>';
+      legend.innerHTML='';return;
+    }
+    const data=clients.map(c=>{
+      const fin=clientFinancials(c.id);
+      const dists=S.distributions.filter(d=>d.clientId===c.id);
+      return{...fin,client:c,dists};
+    });
+    const maxRev=Math.max(...data.map(d=>d.revenue),1);
+
+    bars.innerHTML=data.map(d=>{
+      const revPct=d.revenue/maxRev*100;
+      // per-distribution breakdown inside the bar
+      const distBreakdown=d.dists.filter(x=>x.revenue).map(x=>{
+        const xPct=calcRevenue(x)/d.revenue*100;
+        const statusColor=x.status==='active'?d.client.color:x.status==='archived'?'#b0afa9':'#185fa5';
+        return `<div style="width:${xPct}%;height:100%;background:${statusColor};opacity:${x.status==='archived'?.6:1}" title="${x.name}: ${fmt$(calcRevenue(x))}"></div>`;
+      }).join('');
+      return `<div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:10px;height:10px;border-radius:2px;background:${d.client.color};flex-shrink:0"></div>
+            <span style="font-size:13px;font-weight:600">${esc(d.client.name)}</span>
+            <span style="font-size:11px;color:var(--muted)">${d.dists.filter(x=>x.revenue).length} distribution${d.dists.filter(x=>x.revenue).length!==1?'s':''}</span>
+          </div>
+          <span style="font-size:13px;font-weight:600;color:var(--accent-text)">${fmt$(d.revenue)} billed</span>
+        </div>
+        <div style="height:18px;background:var(--surface2);border-radius:4px;overflow:hidden;display:flex">
+          ${distBreakdown||`<div style="width:${revPct}%;height:100%;background:${d.client.color};border-radius:4px"></div>`}
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:5px">
+          ${d.dists.filter(x=>x.revenue).map(x=>`<span style="font-size:10px;color:var(--muted)">${esc(x.name)}: ${fmt$(calcRevenue(x))}</span>`).join('')}
+        </div>
+      </div>`;
+    }).join('');
+    legend.innerHTML='';
+
+  } else {
+    const dists=S.distributions.filter(d=>d.revenue);
+    if(!dists.length){
+      bars.innerHTML='<div class="chart-empty">Add billing amounts to distributions to see revenue here.</div>';
+      legend.innerHTML='';return;
+    }
+    const revenues=dists.map(d=>calcRevenue(d));
+    const maxRev=Math.max(...revenues,1);
+    bars.innerHTML=dists.map((d,i)=>{
+      const c=S.clients.find(x=>x.id===d.clientId);
+      const pct=revenues[i]/maxRev*100;
+      const color=c?c.color:'#0f6e56';
+      const dateStr=d.date?new Date(d.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',year:'numeric'}):'';
+      return `<div class="chart-bar-row">
+        <div class="chart-bar-label">${esc(d.name)}${dateStr?' ('+dateStr+')':''}</div>
+        <div class="chart-bar-track">
+          <div class="chart-bar-fill" style="width:${pct}%;background:${color}">
+            <span class="chart-bar-inner">${c?esc(c.name):''}</span>
+          </div>
+        </div>
+        <div class="chart-bar-val" style="color:${color}">${fmt$(revenues[i])}</div>
+      </div>`;
+    }).join('');
+    legend.innerHTML=S.clients.filter(c=>S.distributions.some(d=>d.clientId===c.id&&d.revenue)).map(c=>`
+      <div class="legend-item"><div class="legend-dot" style="background:${c.color}"></div>${esc(c.name)}</div>
+    `).join('');
+  }
+}
+
+function toggleActivePanel(){
+  activePanelOpen=!activePanelOpen;
+  document.getElementById('active-panel-body').style.display=activePanelOpen?'block':'none';
+  document.getElementById('active-chev').classList.toggle('open',activePanelOpen);
+}
+function toggleChart(){
+  chartOpen=!chartOpen;
+  document.getElementById('chart-body').style.display=chartOpen?'block':'none';
+  document.getElementById('chart-chev').classList.toggle('open',chartOpen);
+  if(chartOpen) renderChart();
+}
+
+// ════════════════════════════════════════
+//  AUDIT DATE
+// ════════════════════════════════════════
+function fmtAuditDate(iso){
+  if(!iso) return '';
+  const d=new Date(iso);
+  if(isNaN(d)) return iso;
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' '+d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+}
+
+// ════════════════════════════════════════
+//  TOGGLE
+// ════════════════════════════════════════
+function toggle(id){
+  const p=document.getElementById(`dp-${id}`);
+  const h=document.getElementById(`ch-${id}`);
+  const v=document.getElementById(`chev-${id}`);
+  const isOpen=p.classList.contains('open');
+  [p,h,v].forEach(el=>el.classList.toggle('open',!isOpen));
+  isOpen?OPEN.delete(id):OPEN.add(id);
+}
+
+// ════════════════════════════════════════
+//  CLIENT MODAL
+// ════════════════════════════════════════
+function openClientModal(id){
+  editClientId=id||null;
+  document.getElementById('mc-title').textContent=id?'Edit client':'Add client';
+  if(id){
+    const c=S.clients.find(x=>x.id===id);
+    document.getElementById('mc-name').value=c.name;
+    document.getElementById('mc-code').value=c.code;
+    document.getElementById('mc-notes').value=c.notes||'';
+    document.getElementById('mc-color').value=c.color;
+    setColor(c.color);
+  } else {
+    ['mc-name','mc-code','mc-notes'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('mc-color').value='#0f6e56';
+    setColor('#0f6e56');
+  }
+  document.getElementById('modal-client').classList.add('open');
+  setTimeout(()=>document.getElementById('mc-name').focus(),80);
+}
+function saveClient(){
+  const name=document.getElementById('mc-name').value.trim();
+  const code=document.getElementById('mc-code').value.trim().replace(/\s+/g,'').toUpperCase();
+  if(!name||!code){alert('Client name and code are required.');return;}
+  const data={name,code,color:document.getElementById('mc-color').value,notes:document.getElementById('mc-notes').value.trim()};
+  if(editClientId){const i=S.clients.findIndex(x=>x.id===editClientId);if(i>-1)S.clients[i]={...S.clients[i],...data};}
+  else{S.clients.push({id:uid(),...data});}
+  persist();render();closeModal('modal-client');
+}
+function delClient(id){
+  const c=S.clients.find(x=>x.id===id);
+  const n=S.distributions.filter(d=>d.clientId===id).length;
+  if(!confirm(`Delete "${c.name}" and all ${n} distribution(s)? This cannot be undone.`)) return;
+  S.clients=S.clients.filter(x=>x.id!==id);
+  S.distributions=S.distributions.filter(d=>d.clientId!==id);
+  OPEN.delete(id);persist();render();
+}
+
+// ════════════════════════════════════════
+//  COLOR PICKER
+// ════════════════════════════════════════
+function setColor(color){
+  document.querySelectorAll('.swatch').forEach(s=>s.classList.toggle('selected',s.dataset.color===color));
+}
+document.getElementById('swatches').addEventListener('click',e=>{
+  const s=e.target.closest('.swatch');
+  if(!s) return;
+  document.getElementById('mc-color').value=s.dataset.color;
+  setColor(s.dataset.color);
+});
+
+// ════════════════════════════════════════
+//  DISTRIBUTION MODAL
+// ════════════════════════════════════════
+const DIST_FIELDS=['md-name','md-date','md-url','md-url-folder','md-url-tracker','md-url-irs','md-url-cover','md-notes','md-updated-by','md-revenue'];
+
+function openDistModal(clientId,distId){
+  editDistId=distId||null;
+  const c=S.clients.find(x=>x.id===clientId);
+  document.getElementById('md-title').textContent=distId?'Edit distribution':'Add distribution';
+  document.getElementById('md-client-label').textContent=c.name;
+  document.getElementById('md-client-id').value=clientId;
+  if(distId){
+    const d=S.distributions.find(x=>x.id===distId);
+    document.getElementById('md-name').value=d.name;
+    document.getElementById('md-date').value=d.date||'';
+    document.getElementById('md-status').value=d.status;
+    document.getElementById('md-url').value=d.url||'';
+    document.getElementById('md-url-folder').value=d.urlFolder||'';
+    document.getElementById('md-url-tracker').value=d.urlTracker||'';
+    document.getElementById('md-url-irs').value=d.urlIrs||'';
+    document.getElementById('md-url-cover').value=d.urlCover||'';
+    document.getElementById('md-filename').value=d.filename||'';
+    document.getElementById('md-pct').value=d.pct??0;
+    document.getElementById('md-revenue').value=d.revenue||'';
+    document.getElementById('md-updated-by').value=d.updatedBy||'';
+    document.getElementById('md-notes').value=d.notes||'';
+  } else {
+    DIST_FIELDS.forEach(i=>document.getElementById(i).value='');
+    document.getElementById('md-status').value='active';
+    document.getElementById('md-pct').value=0;
+    document.getElementById('md-filename').value='';
+  }
+  document.getElementById('modal-dist').classList.add('open');
+  setTimeout(()=>document.getElementById('md-name').focus(),80);
+}
+
+function autoFilename(){
+  const cid=document.getElementById('md-client-id').value;
+  const c=S.clients.find(x=>x.id===cid);
+  if(!c) return;
+  const date=document.getElementById('md-date').value;
+  const name=document.getElementById('md-name').value.trim();
+  const slug=date||name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  document.getElementById('md-filename').value=`${c.code.toLowerCase()}/${slug}.html`;
+}
+document.getElementById('md-name').addEventListener('input',autoFilename);
+document.getElementById('md-date').addEventListener('change',autoFilename);
+
+function saveDist(){
+  const name=document.getElementById('md-name').value.trim();
+  const clientId=document.getElementById('md-client-id').value;
+  if(!name){alert('Distribution name is required.');return;}
+  const data={clientId,name,
+    date:document.getElementById('md-date').value,
+    status:document.getElementById('md-status').value,
+    url:document.getElementById('md-url').value.trim(),
+    urlFolder:document.getElementById('md-url-folder').value.trim(),
+    urlTracker:document.getElementById('md-url-tracker').value.trim(),
+    urlIrs:document.getElementById('md-url-irs').value.trim(),
+    urlCover:document.getElementById('md-url-cover').value.trim(),
+    filename:document.getElementById('md-filename').value.trim(),
+    pct:parseInt(document.getElementById('md-pct').value)||0,
+    revenue:parseFloat(document.getElementById('md-revenue').value)||0,
+    notes:document.getElementById('md-notes').value.trim(),
+    updatedBy:document.getElementById('md-updated-by').value.trim(),
+    updatedAt:new Date().toISOString(),
+  };
+  if(editDistId){
+    const i=S.distributions.findIndex(x=>x.id===editDistId);
+    if(i>-1) S.distributions[i]={...S.distributions[i],...data};
+    // clear cache so fresh fetch happens
+    delete LIVE[editDistId];
+  } else {
+    S.distributions.push({id:uid(),...data});
+    OPEN.add(clientId);
+  }
+  persist();render();closeModal('modal-dist');
+  showToast('Distribution saved');
+  // kick off fetch for the saved dist
+  const savedId=editDistId||(S.distributions[S.distributions.length-1].id);
+  setTimeout(()=>fetchLive(savedId),400);
+}
+
+function delDist(id){
+  const d=S.distributions.find(x=>x.id===id);
+  if(!confirm(`Delete distribution "${d.name}"?`)) return;
+  S.distributions=S.distributions.filter(x=>x.id!==id);
+  delete LIVE[id];
+  persist();render();
+}
+
+// ════════════════════════════════════════
+//  SEND LINKS MODAL
+// ════════════════════════════════════════
+function openSendLinks(distId){
+  sendLinksDistId=distId;
+  const d=S.distributions.find(x=>x.id===distId);
+  const c=S.clients.find(x=>x.id===d.clientId);
+  document.getElementById('ml-title').textContent=`Send links — ${d.name}`;
+  document.getElementById('ml-sub').textContent=`${c?c.name+' · ':''}${d.name}`;
+
+  const links=buildLinksList(d);
+
+  const CHIP_STYLES={
+    dashboard:'background:#e1f5ee;color:#085041',
+    folder:'background:#e6f1fb;color:#0c447c',
+    tracker:'background:#eaf3de;color:#27500a',
+    irs:'background:#faeeda;color:#633806',
+    cover:'background:#f0ebfa;color:#4a1d8a',
+  };
+
+  document.getElementById('ml-links-list').innerHTML=links.length
+    ? links.map(l=>`<div class="link-preview-row">
+        <span class="link-preview-label">
+          <span style="${CHIP_STYLES[l.type]||''};padding:2px 7px;border-radius:3px;font-size:10px">${l.label}</span>
+        </span>
+        <span class="link-preview-url">${esc(l.url)}</span>
+        <button class="btn btn-sm" onclick="copyText('${esc(l.url)}')">Copy</button>
+      </div>`).join('')
+    : '<p style="font-size:13px;color:var(--hint);margin-bottom:12px">No links added yet. Edit the distribution to add links.</p>';
+
+  const dateStr=d.date?new Date(d.date+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}):'';
+  document.getElementById('ml-preview').textContent=buildEmailBody(d,c,links,dateStr);
+  document.getElementById('ml-to').value='';
+  document.getElementById('modal-links').classList.add('open');
+}
+
+function buildLinksList(d){
+  const links=[];
+  if(d.url) links.push({type:'dashboard',label:'Dashboard',url:d.url});
+  if(d.urlFolder) links.push({type:'folder',label:'Project Folder',url:d.urlFolder});
+  if(d.urlTracker) links.push({type:'tracker',label:'Tracker Sheet',url:d.urlTracker});
+  if(d.urlIrs) links.push({type:'irs',label:'IRS Tracker',url:d.urlIrs});
+  if(d.urlCover) links.push({type:'cover',label:'IRS Cover Letter Folder',url:d.urlCover});
+  return links;
+}
+
+function buildEmailBody(d,c,links,dateStr){
+  const greeting=`Dear ${c?c.name+' team':'Stakeholder'},\n\nPlease find the distribution links for ${d.name}${dateStr?' ('+dateStr+')':''}.\n`;
+  const linksText=links.length
+    ? '\n'+links.map(l=>`${l.label}:\n${l.url}`).join('\n\n')+'\n'
+    : '\n[No links available yet]\n';
+  return greeting+linksText+'\nIf you have any questions, please don\'t hesitate to reach out.\n\nBest regards,\nEquity Distribution Solutions';
+}
+
+function copyLinksText(){
+  const d=S.distributions.find(x=>x.id===sendLinksDistId);
+  const links=buildLinksList(d);
+  navigator.clipboard.writeText(links.map(l=>`${l.label}: ${l.url}`).join('\n')).then(()=>showToast('Links copied'));
+}
+function openMailto(){
+  const to=document.getElementById('ml-to').value.trim();
+  const d=S.distributions.find(x=>x.id===sendLinksDistId);
+  const subject=encodeURIComponent(`Distribution Links — ${d.name}`);
+  const body=encodeURIComponent(document.getElementById('ml-preview').textContent);
+  window.open(`mailto:${to}?subject=${subject}&body=${body}`,'_blank');
+}
+
+// ════════════════════════════════════════
+//  SYNC
+// ════════════════════════════════════════
+function openSyncModal(mode){
+  syncMode=mode;
+  const isExport=mode==='export';
+  document.getElementById('ms-title').textContent=isExport?'Export data':'Import data';
+  document.getElementById('ms-sub').textContent=isExport
+    ? 'Copy the JSON below or download it as a backup file.'
+    : 'Paste your previously exported JSON and click Import.';
+  document.getElementById('ms-import-hint').style.display=isExport?'none':'block';
+  document.getElementById('ms-copy-btn').style.display=isExport?'':'none';
+  document.getElementById('ms-action-btn').textContent=isExport?'Download .json':'Import & replace all';
+  if(isExport){ document.getElementById('ms-data').value=JSON.stringify(S,null,2); document.getElementById('ms-data').readOnly=true; }
+  else { document.getElementById('ms-data').value=''; document.getElementById('ms-data').readOnly=false; }
+  document.getElementById('modal-sync').classList.add('open');
+}
+function copySyncData(){ navigator.clipboard.writeText(document.getElementById('ms-data').value).then(()=>showToast('JSON copied')); }
+function doSyncAction(){
+  if(syncMode==='export'){
+    const blob=new Blob([document.getElementById('ms-data').value],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='eds-hub-backup-'+new Date().toISOString().slice(0,10)+'.json';
+    a.click();
+    showToast('Backup downloaded');
+  } else {
+    const raw=document.getElementById('ms-data').value.trim();
+    if(!raw){alert('Paste your JSON first.');return;}
+    let parsed;
+    try{parsed=JSON.parse(raw);}catch(e){alert('Invalid JSON.\n\n'+e.message);return;}
+    if(!parsed.clients||!parsed.distributions){alert('JSON must have "clients" and "distributions" arrays.');return;}
+    if(!confirm('Replace ALL current data with the imported data?')) return;
+    S=parsed;
+    S.distributions=S.distributions.map(d=>migrate(d));
+    persist();render();closeModal('modal-sync');
+    showToast('Data imported');
+  }
+}
+
+// ════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open');}));
+function copyText(text){ if(!text) return; navigator.clipboard.writeText(text).then(()=>showToast('Copied')); }
+
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+document.getElementById('search').addEventListener('input',e=>{ search=e.target.value; render(); });
+
+// ════════════════════════════════════════
+//  BOOT
+// ════════════════════════════════════════
+load();
+render();
+
+// Fetch live data for all distributions that have sheet URLs
+setTimeout(()=>{
+  S.distributions.forEach(d=>{
+    if(toCsvFetchUrl(d.urlTracker)||toCsvFetchUrl(d.urlIrs)){
+      fetchLive(d.id);
+    }
+  });
+},600);
+</script>
+</body>
+</html>
