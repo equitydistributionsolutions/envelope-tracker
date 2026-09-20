@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HappyCo Envelope Tracker</title>
+<style>
+:root{
+  --bg:#f7f6f3;--surface:#fff;--surface2:#f1efea;--surface3:#e8e6e0;
+  --border:rgba(0,0,0,0.08);--text:#1a1a18;--muted:#6b6b67;--hint:#b0afa9;
+  --accent:#0f6e56;--accent-light:#e1f5ee;
+  --blue-fill:#e6f1fb;--blue-text:#0c447c;
+  --amber-fill:#faeeda;--amber-text:#633806;
+  --green-fill:#eaf3de;--green-text:#27500a;
+  --coral-fill:#faece7;--coral-text:#712b13;
+  --teal-fill:#e1f5ee;--teal-text:#085041;
+  --radius:10px;--radius-sm:6px;--radius-xs:4px;
+  --shadow:0 1px 3px rgba(0,0,0,0.07),0 1px 2px rgba(0,0,0,0.04);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;min-height:100vh}
+.page{max-width:980px;margin:0 auto;padding:2rem 1.5rem 4rem}
+
+/* ── Header ── */
+.site-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.5rem;gap:1rem;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-logo{width:140px;height:140px;border-radius:var(--radius-sm);background:transparent;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700;flex-shrink:0}
+.brand-text h1{font-size:20px;font-weight:600;letter-spacing:-.3px}
+.brand-text p{font-size:13px;color:var(--muted);margin-top:2px}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.live-pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:4px 11px;border-radius:20px;background:var(--green-fill);color:var(--green-text);border:1px solid rgba(39,80,10,.15)}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--green-text);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.refresh-ts{font-size:11px;color:var(--hint)}
+
+/* ── Tabs ── */
+.tab-bar{display:flex;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:1.5rem;box-shadow:var(--shadow)}
+.tab-btn{flex:1;padding:13px 20px;font-size:13px;font-weight:500;color:var(--muted);background:transparent;border:none;cursor:pointer;font-family:inherit;transition:all .15s;text-align:center;border-right:1px solid var(--border);position:relative;line-height:1.3}
+.tab-btn:last-child{border-right:none}
+.tab-btn:hover:not(.active){background:var(--surface2);color:var(--text)}
+.tab-btn.active{background:var(--accent);color:#fff;font-weight:600}
+.tab-btn .tab-name{display:block;font-weight:600}
+.tab-btn .tab-dist{display:block;font-size:11px;opacity:.75;margin-top:2px}
+.tab-btn.active .tab-dist{opacity:.85}
+.tab-loading{display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.5;margin-left:6px;animation:pulse 1s infinite}
+
+/* ── Tab panels ── */
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ── Banners ── */
+.banner{display:none;align-items:flex-start;gap:10px;padding:14px 16px;border-radius:var(--radius-sm);margin-bottom:1.5rem;font-size:13px;line-height:1.6}
+.banner.show{display:flex}
+.banner-error{background:var(--coral-fill);color:var(--coral-text);border:1px solid rgba(113,43,19,.15)}
+
+/* ── Sheet divider ── */
+.sheet-block{margin-bottom:2.5rem}
+.sheet-divider{display:flex;align-items:center;gap:14px;margin-bottom:1.5rem}
+.sheet-divider-line{flex:1;height:1px;background:var(--border)}
+.sheet-title{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.sheet-icon{width:32px;height:32px;border-radius:var(--radius-xs);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:700;flex-shrink:0}
+.sheet-icon.digital{background:#185fa5}
+.sheet-icon.mail{background:#0f6e56}
+.sheet-name{font-size:13px;font-weight:700;letter-spacing:.02em;color:var(--text)}
+.sheet-sub{font-size:11px;color:var(--muted);margin-top:1px}
+
+/* ── Metric cards ── */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1.5rem}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:15px 17px;box-shadow:var(--shadow)}
+.metric-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+.metric-value{font-size:28px;font-weight:600;letter-spacing:-.5px;line-height:1}
+.metric-sub{font-size:12px;margin-top:4px;color:var(--muted)}
+.metric-sub.good{color:var(--green-text)}
+.metric-sub.warn{color:var(--amber-text)}
+
+/* ── Progress cards ── */
+.progress-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-bottom:1.5rem}
+.progress-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:15px 17px;box-shadow:var(--shadow)}
+.progress-card h3{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px}
+.bar-group{margin-bottom:9px}
+.bar-group:last-child{margin-bottom:0}
+.bar-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px}
+.bar-track{height:7px;border-radius:4px;background:var(--surface2);overflow:hidden;border:1px solid var(--border)}
+.bar-fill{height:100%;border-radius:4px;transition:width 1s cubic-bezier(.4,0,.2,1)}
+
+/* ── Section heads ── */
+.section-head{display:flex;align-items:center;justify-content:space-between;margin:1.5rem 0 10px;flex-wrap:wrap;gap:8px}
+.section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);display:flex;align-items:center;gap:8px}
+.section-label::before{content:'';display:block;width:3px;height:14px;border-radius:2px;background:var(--accent)}
+.section-head-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.count-badge{font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;background:var(--surface2);color:var(--muted)}
+
+/* ── Search + pagination controls ── */
+.tbl-controls{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.tbl-search-wrap{position:relative;flex:1;min-width:160px;max-width:280px}
+.tbl-search-wrap svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--hint);pointer-events:none}
+.tbl-search{width:100%;font-size:13px;padding:7px 10px 7px 30px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);outline:none;font-family:inherit}
+.tbl-search:focus{border-color:var(--accent)}
+.tbl-search::placeholder{color:var(--hint)}
+.tbl-page-info{font-size:12px;color:var(--muted);white-space:nowrap}
+.tbl-page-btns{display:flex;gap:4px}
+.pg-btn{font-size:12px;padding:5px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--muted);cursor:pointer;font-family:inherit;transition:all .12s}
+.pg-btn:hover:not(:disabled){background:var(--surface2);color:var(--text)}
+.pg-btn:disabled{opacity:.35;cursor:default}
+.pg-btn.current{background:var(--accent);color:#fff;border-color:var(--accent)}
+.rows-select{font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--muted);cursor:pointer;font-family:inherit;outline:none}
+.rows-select:focus{border-color:var(--accent)}
+.no-results{padding:22px 16px;text-align:center;color:var(--muted);font-size:13px}
+
+/* ── Tables ── */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:.25rem}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border)}
+tbody td{padding:12px 16px;border-bottom:1px solid var(--border);vertical-align:top}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--surface2)}
+.name-primary{font-weight:500}
+.name-secondary{font-size:12px;color:var(--muted);margin-top:2px}
+.mono{font-family:'SF Mono','Fira Code',monospace;font-size:12px;color:var(--muted)}
+
+/* ── Badges ── */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.badge-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.badge-completed{background:var(--green-fill);color:var(--green-text)}
+.badge-sent{background:var(--blue-fill);color:var(--blue-text)}
+.badge-received{background:var(--teal-fill);color:var(--teal-text)}
+.badge-pending{background:var(--amber-fill);color:var(--amber-text)}
+.badge-cancelled{background:var(--coral-fill);color:var(--coral-text)}
+.badge-inprogress{background:#f0ebfa;color:#4a1d8a;border:1px solid rgba(74,29,138,.15)}
+.inprogress-note{font-size:11px;color:#4a1d8a;margin-top:3px;display:flex;align-items:center;gap:4px}
+.cancel-note{font-size:11px;color:var(--coral-text);margin-top:3px;font-style:italic}
+
+/* ── Export button ── */
+.btn-export{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:5px 11px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.btn-export:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-export svg{width:12px;height:12px;flex-shrink:0}
+
+/* ── Footer ── */
+.footer{margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.footer p{font-size:12px;color:var(--hint)}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--text);color:#fff;font-size:13px;padding:10px 18px;border-radius:var(--radius-sm);box-shadow:0 4px 20px rgba(0,0,0,.2);z-index:1000;opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* ── Password screen ── */
+#pw-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.5rem}
+#pw-screen.hidden{display:none}
+.pw-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:36px 32px;width:100%;max-width:380px;box-shadow:0 8px 40px rgba(0,0,0,0.12);text-align:center}
+.pw-logo{width:140px;height:140px;border-radius:var(--radius-sm);background:transparent;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:700;margin:0 auto 20px;letter-spacing:-1px}
+.pw-card h2{font-size:18px;font-weight:600;letter-spacing:-.3px;margin-bottom:6px}
+.pw-card p{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.5}
+.pw-input-wrap{position:relative;margin-bottom:10px}
+.pw-input{width:100%;font-size:14px;padding:11px 44px 11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);outline:none;font-family:inherit;transition:border-color .15s}
+.pw-input:focus{border-color:var(--accent)}
+.pw-input.shake{animation:shake .3s ease;border-color:var(--coral-text)}
+.pw-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--hint);font-size:16px;padding:4px;line-height:1}
+.pw-error{font-size:12px;color:var(--coral-text);min-height:16px;margin-bottom:10px;text-align:left}
+.pw-btn{width:100%;font-size:14px;font-weight:600;padding:11px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;cursor:pointer;font-family:inherit;transition:filter .15s;margin-bottom:12px}
+.pw-btn:hover{filter:brightness(1.08)}
+.pw-remember{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;user-select:none}
+.pw-remember input{accent-color:var(--accent);cursor:pointer;width:14px;height:14px}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}60%{transform:translateX(7px)}}
+
+@media(max-width:600px){
+  .metrics{grid-template-columns:1fr 1fr}
+  .progress-grid{grid-template-columns:1fr}
+  table{font-size:12px}
+  thead th,tbody td{padding:8px 10px}
+  .tab-btn .tab-dist{display:none}
+  .tbl-controls{flex-direction:column;align-items:stretch}
+  .tbl-search-wrap{max-width:100%}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ PASSWORD SCREEN ══ -->
+<div id="pw-screen">
+  <div class="pw-card">
+    <div class="pw-logo">
+      <img src="https://raw.githubusercontent.com/equitydistributionsolutions/envelope-tracker/main/Asset/EDS%20logo.png"
+           alt="EDS" style="width:100%;height:100%;object-fit:contain;border-radius:var(--radius-sm)">
+    </div>
+    <h2>HappyCo Dashboard</h2>
+    <p>September 1, 2026 Distribution · Enter your access password.</p>
+    <div class="pw-input-wrap">
+      <input type="password" class="pw-input" id="pw-input" placeholder="Enter password" autocomplete="current-password">
+      <button class="pw-toggle" onclick="togglePwVis()">👁</button>
+    </div>
+    <div class="pw-error" id="pw-error"></div>
+    <button class="pw-btn" onclick="checkPassword()">Access Dashboard</button>
+    <label class="pw-remember">
+      <input type="checkbox" id="pw-remember" checked>
+      Remember me for 24 hours
+    </label>
+  </div>
+</div>
+
+<!-- ══ MAIN PAGE ══ -->
+<div class="page" id="main-page" style="display:none">
+
+<header class="site-header">
+  <div class="brand">
+    <div class="brand-logo">
+      <img src="https://raw.githubusercontent.com/equitydistributionsolutions/envelope-tracker/main/Asset/EDS%20logo.png"
+           alt="EDS" style="width:100%;height:100%;object-fit:contain;border-radius:var(--radius-sm)">
+    </div>
+    <div class="brand-text">
+      <h1>HappyCo Envelope Tracker</h1>
+      <p>September 1, 2026 Distribution</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-pill"><div class="pulse"></div>Live</div>
+    <div class="refresh-ts" id="refresh-ts">Connecting…</div>
+  </div>
+</header>
+
+<!-- ══ TAB BAR ══ -->
+<div class="tab-bar" role="tablist">
+  <button class="tab-btn active" id="tab-btn-0" onclick="switchTab(0)" role="tab" aria-selected="true">
+    <span class="tab-name">HappyCo Topco, L.P.</span>
+    <span class="tab-dist">Sep 1, 2026 Distribution</span>
+  </button>
+  <button class="tab-btn" id="tab-btn-1" onclick="switchTab(1)" role="tab" aria-selected="false">
+    <span class="tab-name">HappyCo Inc.</span>
+    <span class="tab-dist">Sep 1, 2026 Distribution</span>
+  </button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB 0 — HappyCo Topco, L.P.
+══════════════════════════════════════════════════════ -->
+<div class="tab-panel active" id="tab-panel-0">
+  <div class="banner banner-error" id="t0-banner-error">
+    ⚠️ <div id="t0-banner-error-msg">Could not load data.</div>
+  </div>
+
+  <!-- DIGITAL ENVELOPES -->
+  <div class="sheet-block">
+    <div class="sheet-divider">
+      <div class="sheet-divider-line"></div>
+      <div class="sheet-title">
+        <div class="sheet-icon digital">✉</div>
+        <div>
+          <div class="sheet-name">Digital Envelopes</div>
+          <div class="sheet-sub">HappyCo Topco — digital signatures</div>
+        </div>
+      </div>
+      <div class="sheet-divider-line"></div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="metric-label">Total envelopes</div><div class="metric-value" id="t0-d-total">—</div><div class="metric-sub">digital only</div></div>
+      <div class="metric"><div class="metric-label">Completed</div><div class="metric-value" id="t0-d-completed">—</div><div class="metric-sub good" id="t0-d-completed-pct"></div></div>
+      <div class="metric"><div class="metric-label">In Progress</div><div class="metric-value" id="t0-d-inprogress" style="color:#4a1d8a">—</div><div class="metric-sub" style="color:#4a1d8a">awaiting 2nd signer</div></div>
+      <div class="metric"><div class="metric-label">Sent</div><div class="metric-value" id="t0-d-sent">—</div><div class="metric-sub warn">awaiting signature</div></div>
+      <div class="metric"><div class="metric-label">Cancelled</div><div class="metric-value" id="t0-d-pending">—</div><div class="metric-sub warn">with note</div></div>
+    </div>
+    <div class="progress-grid">
+      <div class="progress-card">
+        <h3>Digital envelope progress</h3>
+        <div class="bar-group"><div class="bar-meta"><span>Completed</span><span id="t0-bl-d-completed">0 of 0</span></div><div class="bar-track"><div class="bar-fill" id="t0-bar-d-completed" style="width:0%;background:#3b6d11"></div></div></div>
+        <div class="bar-group"><div class="bar-meta"><span>In Progress</span><span id="t0-bl-d-inprogress">0 of 0</span></div><div class="bar-track"><div class="bar-fill" id="t0-bar-d-inprogress" style="width:0%;background:#4a1d8a"></div></div></div>
+        <div class="bar-group"><div class="bar-meta"><span>Sent (awaiting)</span><span id="t0-bl-d-sent">0 of 0</span></div><div class="bar-track"><div class="bar-fill" id="t0-bar-d-sent" style="width:0%;background:#185fa5"></div></div></div>
+        <div class="bar-group"><div class="bar-meta"><span>Cancelled</span><span id="t0-bl-d-pending">0 of 0</span></div><div class="bar-track"><div class="bar-fill" id="t0-bar-d-pending" style="width:0%;background:#c07830"></div></div></div>
+      </div>
+    </div>
+    <div class="section-head">
+      <div class="section-label">All digital envelopes</div>
+      <div class="section-head-right">
+        <span class="count-badge" id="t0-ct-digital">—</span>
+        <button class="btn-export" onclick="exportCSV(0,'digital')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+      </div>
+    </div>
+    <div class="tbl-controls">
+      <div class="tbl-search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="tbl-search" id="t0-dig-search" placeholder="Search name, status…" oninput="onSearch(0,'digital')">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="tbl-page-info" id="t0-dig-page-info"></span>
+        <select class="rows-select" id="t0-dig-rows-sel" onchange="onRowsChange(0,'digital')">
+          <option value="10" selected>10 / page</option>
+          <option value="25">25 / page</option>
+          <option value="50">50 / page</option>
+          <option value="100">100 / page</option>
+          <option value="0">All</option>
+        </select>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th style="width:30%">Candidate(s)</th>
+          <th style="width:15%">Status</th>
+          <th style="width:20%">Date signed / sent</th>
+          <th style="width:16%">Envelope ID</th>
+          <th>Notes</th>
+        </tr></thead>
+        <tbody id="t0-tbody-digital"><tr><td colspan="5" style="padding:22px 16px;color:var(--muted);text-align:center">Loading…</td></tr></tbody>
+      </table>
+    </div>
+    <div style="display:flex;justify-content:center;gap:6px;margin-top:10px" id="t0-dig-pagination"></div>
+  </div>
+
+  <!-- PHYSICAL MAIL -->
+  <div class="sheet-block">
+    <div class="sheet-divider">
+      <div class="sheet-divider-line"></div>
+      <div class="sheet-title">
+        <div class="sheet-icon mail">📬</div>
+        <div>
+          <div class="sheet-name">Physical Mail</div>
+          <div class="sheet-sub">HappyCo Topco — mail tracking by class</div>
+        </div>
+      </div>
+      <div class="sheet-divider-line"></div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="metric-label">Total records</div><div class="metric-value" id="t0-m-total">—</div><div class="metric-sub">physical mail</div></div>
+      <div class="metric"><div class="metric-label">Completed / received</div><div class="metric-value" id="t0-m-done">—</div><div class="metric-sub good" id="t0-m-done-pct"></div></div>
+      <div class="metric"><div class="metric-label">Pending</div><div class="metric-value" id="t0-m-pending">—</div><div class="metric-sub warn">not yet done</div></div>
+      <div class="metric"><div class="metric-label">Classes</div><div class="metric-value" id="t0-m-classes">—</div><div class="metric-sub">detected</div></div>
+    </div>
+    <div class="progress-grid" id="t0-mail-progress-grid"></div>
+    <div class="section-head" id="t0-mail-export-head" style="display:none">
+      <div class="section-label">All mail records</div>
+      <div class="section-head-right">
+        <span class="count-badge" id="t0-ct-mail">—</span>
+        <button class="btn-export" onclick="exportCSV(0,'mail')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+      </div>
+    </div>
+    <div class="tbl-controls" id="t0-mail-controls" style="display:none">
+      <div class="tbl-search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="tbl-search" id="t0-mail-search" placeholder="Search name, class, status…" oninput="onSearch(0,'mail')">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="tbl-page-info" id="t0-mail-page-info"></span>
+        <select class="rows-select" id="t0-mail-rows-sel" onchange="onRowsChange(0,'mail')">
+          <option value="10" selected>10 / page</option>
+          <option value="25">25 / page</option>
+          <option value="50">50 / page</option>
+          <option value="100">100 / page</option>
+          <option value="0">All</option>
+        </select>
+      </div>
+    </div>
+    <div id="t0-mail-sections"></div>
+    <div style="display:flex;justify-content:center;gap:6px;margin-top:10px" id="t0-mail-pagination"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB 1 — HappyCo Inc.
+══════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-panel-1">
+  <div class="banner banner-error" id="t1-banner-error">
+    ⚠️ <div id="t1-banner-error-msg">Could not load data.</div>
+  </div>
+
+  <!-- DIGITAL ENVELOPES -->
+  <div class="sheet-block">
+    <div class="sheet-divider">
+      <div class="sheet-divider-line"></div>
+      <div class="sheet-title">
+        <div class="sheet-icon digital">✉</div>
+        <div>
+          <div class="sheet-name">Digital Envelopes</div>
+          <div class="sheet-sub">HappyCo Inc. — digital signatures</div>
+        </div>
+      </div>
+      <div class="sheet-divider-line"></div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="metric-label">Total envelopes</div><div class="metric-value" id="t1-d-total">—</div><div class="metric-sub">digital only</div></div>
+      <div class="metric"><div class="metric-label">Completed</div><div class="metric-value" id="t1-d-completed">—</div><div class="metric-sub good" id="t1-d-completed-pct"></div></div>
+      <div class="metric"><div class="metric-label">In Progress</div><div class="metric-value" id="t1-d-inprogress" style="color:#4a1d8a">—</div><div class="metric-sub" style="color:#4a1d8a">awaiting 2nd signer</div></div>
+      <div class="metric"><div class="metric-label">Sent</div><div class="metric-value" id="t1-d-sent">—</div><div class="metric-sub warn">awaiting signature</div></div>
+      <div class="metric"><div class="metric-label">Cancelled</div><div class="metric-value" id="t1-d-pending">—</div><div class="metric-sub warn">with note</div></div>
+    </div>
+    <div class="progress-grid">
+      <div class="progress-card">
+        <h3>Digital envelope progress</h3>
+        <div class="bar-group"><div class="bar-meta"><span>Completed</span><span id="t1-bl-d-completed">0 of 0</span></div><div class="bar-track"><div class="bar-fill" id="t1-bar-d-completed" style="width:0%;background:#3b6d11"></div></div></div>
+        <div class="bar-group"><div class="bar-meta"><span>In Progress</span><span id="t1-bl-d-inprogress">0 of 0</span></div><div class="bar-track"><div class="bar-fill" id="t1-bar-d-inprogress" style="width:0%;background:#4a1d8a"></div></div></div>
+        <div class="bar-group"><div class="bar-meta"><span>Sent (awaiting)</span><span id="t1-bl-d-sent">0 of 0</span></div><div class="bar-track"><div class="bar-fill" id="t1-bar-d-sent" style="width:0%;background:#185fa5"></div></div></div>
+        <div class="bar-group"><div class="bar-meta"><span>Cancelled</span><span id="t1-bl-d-pending">0 of 0</span></div><div class="bar-track"><div class="bar-fill" id="t1-bar-d-pending" style="width:0%;background:#c07830"></div></div></div>
+      </div>
+    </div>
+    <div class="section-head">
+      <div class="section-label">All digital envelopes</div>
+      <div class="section-head-right">
+        <span class="count-badge" id="t1-ct-digital">—</span>
+        <button class="btn-export" onclick="exportCSV(1,'digital')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+      </div>
+    </div>
+    <div class="tbl-controls">
+      <div class="tbl-search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="tbl-search" id="t1-dig-search" placeholder="Search name, status…" oninput="onSearch(1,'digital')">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="tbl-page-info" id="t1-dig-page-info"></span>
+        <select class="rows-select" id="t1-dig-rows-sel" onchange="onRowsChange(1,'digital')">
+          <option value="10" selected>10 / page</option>
+          <option value="25">25 / page</option>
+          <option value="50">50 / page</option>
+          <option value="100">100 / page</option>
+          <option value="0">All</option>
+        </select>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th style="width:30%">Candidate(s)</th>
+          <th style="width:15%">Status</th>
+          <th style="width:20%">Date signed / sent</th>
+          <th style="width:16%">Envelope ID</th>
+          <th>Notes</th>
+        </tr></thead>
+        <tbody id="t1-tbody-digital"><tr><td colspan="5" style="padding:22px 16px;color:var(--muted);text-align:center">Loading…</td></tr></tbody>
+      </table>
+    </div>
+    <div style="display:flex;justify-content:center;gap:6px;margin-top:10px" id="t1-dig-pagination"></div>
+  </div>
+
+  <!-- PHYSICAL MAIL -->
+  <div class="sheet-block">
+    <div class="sheet-divider">
+      <div class="sheet-divider-line"></div>
+      <div class="sheet-title">
+        <div class="sheet-icon mail">📬</div>
+        <div>
+          <div class="sheet-name">Physical Mail</div>
+          <div class="sheet-sub">HappyCo Inc. — mail tracking by class</div>
+        </div>
+      </div>
+      <div class="sheet-divider-line"></div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="metric-label">Total records</div><div class="metric-value" id="t1-m-total">—</div><div class="metric-sub">physical mail</div></div>
+      <div class="metric"><div class="metric-label">Completed / received</div><div class="metric-value" id="t1-m-done">—</div><div class="metric-sub good" id="t1-m-done-pct"></div></div>
+      <div class="metric"><div class="metric-label">Pending</div><div class="metric-value" id="t1-m-pending">—</div><div class="metric-sub warn">not yet done</div></div>
+      <div class="metric"><div class="metric-label">Classes</div><div class="metric-value" id="t1-m-classes">—</div><div class="metric-sub">detected</div></div>
+    </div>
+    <div class="progress-grid" id="t1-mail-progress-grid"></div>
+    <div class="section-head" id="t1-mail-export-head" style="display:none">
+      <div class="section-label">All mail records</div>
+      <div class="section-head-right">
+        <span class="count-badge" id="t1-ct-mail">—</span>
+        <button class="btn-export" onclick="exportCSV(1,'mail')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+      </div>
+    </div>
+    <div class="tbl-controls" id="t1-mail-controls" style="display:none">
+      <div class="tbl-search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="tbl-search" id="t1-mail-search" placeholder="Search name, class, status…" oninput="onSearch(1,'mail')">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="tbl-page-info" id="t1-mail-page-info"></span>
+        <select class="rows-select" id="t1-mail-rows-sel" onchange="onRowsChange(1,'mail')">
+          <option value="10" selected>10 / page</option>
+          <option value="25">25 / page</option>
+          <option value="50">50 / page</option>
+          <option value="100">100 / page</option>
+          <option value="0">All</option>
+        </select>
+      </div>
+    </div>
+    <div id="t1-mail-sections"></div>
+    <div style="display:flex;justify-content:center;gap:6px;margin-top:10px" id="t1-mail-pagination"></div>
+  </div>
+</div>
+
+<footer class="footer">
+  <p>HappyCo · September 1, 2026 Distribution · Equity Distribution Solutions</p>
+  <p id="footer-ts">—</p>
+</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  CONFIG — two distributions, one page
+// ════════════════════════════════════════════════════════
+const DISTS = [
+  {
+    id:            0,
+    clientName:    'HappyCo Topco, L.P.',
+    distName:      'September 1, 2026 Distribution',
+    digitalUrl:    'https://docs.google.com/spreadsheets/d/e/2PACX-1vR7u4tsqAxYaqEug9h3QcW_6_t5F8P9vHP2SRgQ2ZP3dlV2JfcyjZcvRTTTc9tawPTH-pzuTcvf6PkZ/pub?gid=0&single=true&output=csv',
+    mailUrl:       'https://docs.google.com/spreadsheets/d/e/2PACX-1vRnTqbrSKcGSXxOZahi5DbwHBbpEL07bZTJPyaEYuPpcMVsjZZYGLos6Vnb8DnZ6AiaBLLx-3D6DjJW/pub?gid=0&single=true&output=csv',
+  },
+  {
+    id:            1,
+    clientName:    'HappyCo Inc.',
+    distName:      'September 1, 2026 Distribution',
+    digitalUrl:    'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSXdn4jIen7zkL8r8Jcd22HRK6J7ZX0JgjPoFa1iF0eEkRRhA_-hUof0qGvQMdE43nstmOyYXsfwHB/pub?gid=0&single=true&output=csv',
+    mailUrl:       'https://docs.google.com/spreadsheets/d/e/2PACX-1vSV6Vx--jzBsFCmKUTfuga2wnBtRhl8snOLCN5Q1ALEhX_LJqJ31Qn3U-h4AGQUlYBsST-4tYw0NRE1/pub?gid=0&single=true&output=csv',
+  },
+];
+
+const PASSWORD       = 'happyco_sep1_2026';  // ← shared password — change as needed
+const REFRESH_SEC    = 30;
+const ROWS_PER_PAGE  = 10;
+// ════════════════════════════════════════════════════════
+
+// ── State per tab ──────────────────────────────────────
+// state[tid] = { digitalRows, mailClasses, digPage, digSearch, digRowsPer }
+const STATE = DISTS.map(() => ({
+  digitalRows:  null,
+  mailClasses:  null,
+  mailBuiltRows: [],   // flat array of all mail rows across classes, for pagination
+  digPage:      1,
+  digSearch:    '',
+  digRowsPer:   ROWS_PER_PAGE,
+  mailPage:     1,
+  mailSearch:   '',
+  mailRowsPer:  ROWS_PER_PAGE,
+  loaded:       false,
+}));
+
+let activeTab = 0;
+
+// ════════════════════════════════════════════════════════
+//  UTILITIES
+// ════════════════════════════════════════════════════════
+const PALETTE = [
+  {bar:'#0f6e56'},{bar:'#185fa5'},{bar:'#854f0b'},{bar:'#4a1d8a'},
+  {bar:'#712b13'},{bar:'#1a5276'},{bar:'#3b6d11'},{bar:'#633806'},
+];
+const pal = i => PALETTE[i % PALETTE.length];
+
+function fmtDate(raw){
+  if(!raw||raw==='NaT'||!raw.trim()||raw.trim().toLowerCase()==='x') return '—';
+  const d=new Date(raw);
+  if(isNaN(d)) return raw;
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+function badge(cls,label){
+  return `<span class="badge ${cls}"><span class="badge-dot"></span>${label}</span>`;
+}
+function isX(v){ return v&&v.trim().toLowerCase()==='x'; }
+function isRealDate(v){ return v&&v.trim()&&!isX(v)&&!isNaN(new Date(v)); }
+function pctOf(n,t){ return t?Math.round(n/t*100):0; }
+function nowStr(){
+  return new Date().toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+function eid(id){ return document.getElementById(id); }
+
+let toastTimer;
+function showToast(msg){
+  const t=eid('toast');
+  t.textContent='✓ '+msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ════════════════════════════════════════════════════════
+//  CSV PARSE + FETCH
+// ════════════════════════════════════════════════════════
+function parseCSV(text){
+  const lines=text.trim().split('\n');
+  if(!lines.length) return [];
+  const headers=lines[0].split(',').map(h=>h.replace(/^"|"$/g,'').trim());
+  return lines.slice(1).map(line=>{
+    const vals=[];let cur='',inQ=false;
+    for(const ch of line){
+      if(ch==='"'){inQ=!inQ;}
+      else if(ch===','&&!inQ){vals.push(cur.trim());cur='';}
+      else cur+=ch;
+    }
+    vals.push(cur.trim());
+    const obj={};
+    headers.forEach((h,i)=>obj[h]=(vals[i]||'').replace(/^"|"$/g,''));
+    return obj;
+  }).filter(r=>Object.values(r).some(v=>v!==''));
+}
+
+async function fetchCSV(url){
+  const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('Request timed out')),12000));
+  const res=await Promise.race([fetch(url),timeout]);
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  return parseCSV(await res.text());
+}
+
+function parseMailClasses(rows){
+  const classes=[];let cur=null;
+  for(const row of rows){
+    const n=(row['Name']||'').trim();
+    if(/^CLASS\s+\S+/i.test(n)){cur={label:n.toUpperCase(),rows:[]};classes.push(cur);continue;}
+    if(!n||!cur) continue;
+    cur.rows.push(row);
+  }
+  classes.forEach(cls=>{
+    cls.type=cls.rows.some(r=>isRealDate(r['Mail Date']))?'mail':'simple';
+  });
+  return classes;
+}
+
+// ════════════════════════════════════════════════════════
+//  TABS
+// ════════════════════════════════════════════════════════
+function switchTab(tid){
+  activeTab=tid;
+  DISTS.forEach((_,i)=>{
+    eid(`tab-btn-${i}`).classList.toggle('active',i===tid);
+    eid(`tab-btn-${i}`).setAttribute('aria-selected',i===tid);
+    eid(`tab-panel-${i}`).classList.toggle('active',i===tid);
+  });
+  sessionStorage.setItem('et_active_tab',tid);
+  // Load tab data on first visit
+  if(!STATE[tid].loaded) loadTab(tid);
+}
+
+// ════════════════════════════════════════════════════════
+//  RENDER — DIGITAL
+// ════════════════════════════════════════════════════════
+function buildDigitalRows(rows){
+  return rows.map(r=>{
+    const rawNames=r['Candidate::Name']||r['Name']||'';
+    const names=rawNames.split(',').map(n=>n.trim()).filter(Boolean);
+    const n1=names[0]||'—', n2=names.slice(1).join(', ');
+    const status=(r['Document Status']||'').toLowerCase().trim();
+    const note=r['Notes']||r['Note']||'';
+    let bdg,subNote='',isIP=false;
+    if(status==='completed'){bdg=badge('badge-completed','Completed');}
+    else if(status==='in progress'||status==='inprogress'||status==='in-progress'){
+      isIP=true;bdg=badge('badge-inprogress','In Progress');
+      subNote=`<div class="inprogress-note">⏳ Awaiting 2nd signer</div>`;
+    }
+    else if(status==='sent'||status==='delivered'){bdg=badge('badge-sent','Sent');}
+    else if(status==='cancelled'||status==='canceled'){bdg=badge('badge-cancelled','Cancelled');}
+    else{bdg=badge('badge-sent','Sent');}
+    const dateRaw=(r['Date Signed']||'').replace(/^Sent\s*-\s*/i,'').split(',')[0];
+    const envId=(r['Envelope ID']||'').split('-').slice(0,2).join('-')+'…';
+    const searchStr=[n1,n2,status,note].join(' ').toLowerCase();
+    return {html:`<tr${isIP?' style="background:rgba(74,29,138,0.03)"':''}>
+      <td><div class="name-primary">${n1}</div>${n2?`<div class="name-secondary">${n2}</div>`:''}</td>
+      <td>${bdg}${subNote}</td>
+      <td style="color:var(--muted);font-size:12px">${fmtDate(dateRaw)}</td>
+      <td class="mono">${envId}</td>
+      <td>${note?`<span class="cancel-note">${note}</span>`:'<span style="color:var(--hint)">—</span>'}</td>
+    </tr>`, searchStr, status, n1, n2, dateRaw, envId, note};
+  });
+}
+
+function renderDigital(tid, rows){
+  const p=`t${tid}`;
+  let completed=0,sent=0,cancelled=0,inprogress=0;
+  rows.forEach(r=>{
+    const s=(r['Document Status']||'').toLowerCase().trim();
+    if(s==='completed') completed++;
+    else if(s==='in progress'||s==='inprogress'||s==='in-progress') inprogress++;
+    else if(s==='sent'||s==='delivered') sent++;
+    else if(s==='cancelled'||s==='canceled') cancelled++;
+    else sent++;
+  });
+  const total=rows.length;
+  eid(`${p}-d-total`).textContent=total;
+  eid(`${p}-d-completed`).textContent=completed;
+  eid(`${p}-d-completed-pct`).textContent=`${pctOf(completed,total)}% of total`;
+  eid(`${p}-d-inprogress`).textContent=inprogress;
+  eid(`${p}-d-sent`).textContent=sent;
+  eid(`${p}-d-pending`).textContent=cancelled;
+  eid(`${p}-bl-d-completed`).textContent=`${completed} of ${total}`;
+  eid(`${p}-bl-d-inprogress`).textContent=`${inprogress} of ${total}`;
+  eid(`${p}-bl-d-sent`).textContent=`${sent} of ${total}`;
+  eid(`${p}-bl-d-pending`).textContent=`${cancelled} of ${total}`;
+  eid(`${p}-bar-d-completed`).style.width=pctOf(completed,total)+'%';
+  eid(`${p}-bar-d-inprogress`).style.width=pctOf(inprogress,total)+'%';
+  eid(`${p}-bar-d-sent`).style.width=pctOf(sent,total)+'%';
+  eid(`${p}-bar-d-pending`).style.width=pctOf(cancelled,total)+'%';
+  eid(`${p}-ct-digital`).textContent=`${total} envelope${total!==1?'s':''}`;
+  // Store built rows on state for pagination
+  STATE[tid].builtRows=buildDigitalRows(rows);
+  renderDigitalPage(tid);
+}
+
+function renderDigitalPage(tid){
+  const p=`t${tid}`;
+  const st=STATE[tid];
+  const q=st.digSearch.toLowerCase();
+  const filtered=q
+    ? st.builtRows.filter(r=>r.searchStr.includes(q))
+    : st.builtRows;
+
+  const perPage=st.digRowsPer;
+  const total=filtered.length;
+  const pages=perPage>0?Math.max(1,Math.ceil(total/perPage)):1;
+  if(st.digPage>pages) st.digPage=pages;
+  const page=st.digPage;
+
+  const slice=perPage>0?filtered.slice((page-1)*perPage,page*perPage):filtered;
+  const tbody=eid(`${p}-tbody-digital`);
+  if(!slice.length){
+    tbody.innerHTML=`<tr><td colspan="5" class="no-results">${q?'No results for "'+q+'"':'No records found.'}</td></tr>`;
+  } else {
+    tbody.innerHTML=slice.map(r=>r.html).join('');
+  }
+
+  // Page info
+  if(perPage>0&&total>0){
+    const from=(page-1)*perPage+1, to=Math.min(page*perPage,total);
+    eid(`${p}-dig-page-info`).textContent=`${from}–${to} of ${total}`;
+  } else {
+    eid(`${p}-dig-page-info`).textContent=total>0?`${total} records`:'';
+  }
+
+  // Pagination buttons
+  const pag=eid(`${p}-dig-pagination`);
+  if(perPage===0||pages<=1){pag.innerHTML='';return;}
+  let btns='';
+  btns+=`<button class="pg-btn" onclick="goPage(${tid},'digital',${page-1})" ${page===1?'disabled':''}>← Prev</button>`;
+  // Show up to 7 page numbers with ellipsis
+  const range=pageRange(page,pages);
+  range.forEach(n=>{
+    if(n==='…'){btns+=`<button class="pg-btn" disabled>…</button>`;}
+    else{btns+=`<button class="pg-btn${n===page?' current':''}" onclick="goPage(${tid},'digital',${n})">${n}</button>`;}
+  });
+  btns+=`<button class="pg-btn" onclick="goPage(${tid},'digital',${page+1})" ${page===pages?'disabled':''}>Next →</button>`;
+  pag.innerHTML=btns;
+}
+
+function pageRange(cur,total){
+  if(total<=7) return Array.from({length:total},(_,i)=>i+1);
+  const r=[];
+  r.push(1);
+  if(cur>3) r.push('…');
+  for(let i=Math.max(2,cur-1);i<=Math.min(total-1,cur+1);i++) r.push(i);
+  if(cur<total-2) r.push('…');
+  r.push(total);
+  return r;
+}
+
+function goPage(tid,tbl,page){
+  if(tbl==='digital'){ STATE[tid].digPage=page; renderDigitalPage(tid); }
+  else if(tbl==='mail'){ STATE[tid].mailPage=page; renderMailPage(tid); }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function onSearch(tid,tbl){
+  if(tbl==='digital'){
+    STATE[tid].digSearch=eid(`t${tid}-dig-search`).value;
+    STATE[tid].digPage=1;
+    renderDigitalPage(tid);
+  } else if(tbl==='mail'){
+    STATE[tid].mailSearch=eid(`t${tid}-mail-search`).value;
+    STATE[tid].mailPage=1;
+    renderMailPage(tid);
+  }
+}
+function onRowsChange(tid,tbl){
+  if(tbl==='digital'){
+    STATE[tid].digRowsPer=parseInt(eid(`t${tid}-dig-rows-sel`).value)||0;
+    STATE[tid].digPage=1;
+    renderDigitalPage(tid);
+  } else if(tbl==='mail'){
+    STATE[tid].mailRowsPer=parseInt(eid(`t${tid}-mail-rows-sel`).value)||0;
+    STATE[tid].mailPage=1;
+    renderMailPage(tid);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  RENDER — MAIL CLASSES  (with pagination)
+// ════════════════════════════════════════════════════════
+function renderMailClasses(tid,classes){
+  const p=`t${tid}`;
+  const grid=eid(`${p}-mail-progress-grid`);
+  let progressHTML='';
+  let grandTotal=0,grandDone=0;
+
+  // ── Build progress bars + flat row list for pagination ──
+  const allMailRows=[];  // {classLabel, classType, html, searchStr}
+
+  classes.forEach((cls,i)=>{
+    const color=pal(i);
+    const rows=cls.rows;
+    let done=0;
+
+    if(cls.type==='simple'){
+      rows.forEach(r=>{
+        const raw=r.done!==undefined?r.done:isX(r['Mail Date']||'');
+        const isDone=raw===true||raw===1;
+        if(isDone) done++;
+        const nm=r.name||r['Name']||'—';
+        const statusLabel=isDone?'Completed':'Pending';
+        allMailRows.push({
+          classLabel:cls.label, classType:'simple',
+          html:`<tr><td class="name-primary" style="width:70%">${nm}</td><td>${isDone?badge('badge-completed','Completed'):badge('badge-pending','Pending')}</td></tr>`,
+          searchStr:(nm+' '+cls.label+' '+statusLabel).toLowerCase(),
+          isDone,
+        });
+      });
+      const pct=pctOf(done,rows.length);
+      progressHTML+=`<div class="progress-card"><h3>${cls.label}</h3><div class="bar-group"><div class="bar-meta"><span>Completed</span><span>${done} of ${rows.length}</span></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color.bar}"></div></div></div></div>`;
+    } else {
+      let mailed=0;
+      rows.forEach(r=>{
+        const nm=r.name||r['Name']||'—';
+        const md=r.mailDate||r['Mail Date']||'';
+        const tracking=r.tracking||r['Tracking Number']||'—';
+        const irs=r.irsReceived||r['IRS Received']||'';
+        const hasMail=isRealDate(md);
+        const hasIRS=irs&&irs!=='NaT'&&irs.trim()&&!isX(irs);
+        if(hasIRS) done++;
+        if(hasMail) mailed++;
+        const statusLabel=hasIRS?'IRS received':hasMail?'Mailed':'Pending';
+        allMailRows.push({
+          classLabel:cls.label, classType:'mail',
+          html:`<tr><td class="name-primary">${nm}</td><td style="font-size:12px;color:var(--muted)">${hasMail?fmtDate(md):badge('badge-pending','Not mailed')}</td><td class="mono">${hasMail?tracking:'—'}</td><td>${hasIRS?badge('badge-received',fmtDate(irs)):badge('badge-pending','Pending')}</td></tr>`,
+          searchStr:(nm+' '+cls.label+' '+statusLabel).toLowerCase(),
+        });
+      });
+      const pctMailed=pctOf(mailed,rows.length),pctIRS=pctOf(done,rows.length);
+      progressHTML+=`<div class="progress-card"><h3>${cls.label}</h3><div class="bar-group"><div class="bar-meta"><span>Mailed</span><span>${mailed} of ${rows.length}</span></div><div class="bar-track"><div class="bar-fill" style="width:${pctMailed}%;background:${color.bar}"></div></div></div><div class="bar-group"><div class="bar-meta"><span>IRS received</span><span>${done} of ${rows.length}</span></div><div class="bar-track"><div class="bar-fill" style="width:${pctIRS}%;background:#3b6d11"></div></div></div></div>`;
+    }
+    grandTotal+=rows.length;
+    grandDone+=done;
+  });
+
+  grid.innerHTML=progressHTML;
+
+  // Store flat rows on state for pagination
+  STATE[tid].mailBuiltRows=allMailRows;
+
+  const grandPending=grandTotal-grandDone;
+  eid(`${p}-m-total`).textContent=grandTotal;
+  eid(`${p}-m-done`).textContent=grandDone;
+  eid(`${p}-m-done-pct`).textContent=`${pctOf(grandDone,grandTotal)}% of total`;
+  eid(`${p}-m-pending`).textContent=grandPending;
+  eid(`${p}-m-classes`).textContent=classes.length;
+
+  if(grandTotal>0){
+    eid(`${p}-mail-export-head`).style.display='';
+    eid(`${p}-mail-controls`).style.display='';
+    eid(`${p}-ct-mail`).textContent=`${grandTotal} record${grandTotal!==1?'s':''}`;
+  }
+
+  renderMailPage(tid);
+}
+
+function renderMailPage(tid){
+  const p=`t${tid}`;
+  const st=STATE[tid];
+  const q=st.mailSearch.toLowerCase();
+  const filtered=q
+    ? st.mailBuiltRows.filter(r=>r.searchStr.includes(q))
+    : st.mailBuiltRows;
+
+  const perPage=st.mailRowsPer;
+  const total=filtered.length;
+  const pages=perPage>0?Math.max(1,Math.ceil(total/perPage)):1;
+  if(st.mailPage>pages) st.mailPage=pages;
+  const page=st.mailPage;
+
+  const slice=perPage>0?filtered.slice((page-1)*perPage,page*perPage):filtered;
+
+  // Group the slice back into classes for clean display
+  const sections=eid(`${p}-mail-sections`);
+  if(!slice.length){
+    sections.innerHTML=`<div class="table-wrap"><table><tbody><tr><td colspan="4" class="no-results">${q?'No results for "'+q+'"':'No records.'}</td></tr></tbody></table></div>`;
+  } else {
+    // Group consecutive rows by class
+    const groups=[];
+    slice.forEach(r=>{
+      if(!groups.length||groups[groups.length-1].label!==r.classLabel){
+        groups.push({label:r.classLabel,type:r.classType,rows:[]});
+      }
+      groups[groups.length-1].rows.push(r.html);
+    });
+
+    sections.innerHTML=groups.map(g=>{
+      const isSimple=g.type==='simple';
+      const header=isSimple
+        ? `<tr><th style="width:70%">Name</th><th>Status</th></tr>`
+        : `<tr><th style="width:35%">Name</th><th style="width:18%">Mail date</th><th style="width:28%">Tracking number</th><th>IRS received</th></tr>`;
+      const colSpan=isSimple?2:4;
+      return `<div class="section-head"><div class="section-label">${g.label}</div><span class="count-badge">${g.rows.length} shown</span></div>
+        <div class="table-wrap"><table><thead>${header}</thead><tbody>${g.rows.join('')||'<tr><td colspan="'+colSpan+'" class="no-results">No records.</td></tr>'}</tbody></table></div>`;
+    }).join('');
+  }
+
+  // Page info
+  if(perPage>0&&total>0){
+    const from=(page-1)*perPage+1,to=Math.min(page*perPage,total);
+    eid(`${p}-mail-page-info`).textContent=`${from}–${to} of ${total}`;
+  } else {
+    eid(`${p}-mail-page-info`).textContent=total>0?`${total} records`:'';
+  }
+
+  // Pagination buttons
+  const pag=eid(`${p}-mail-pagination`);
+  if(perPage===0||pages<=1){pag.innerHTML='';return;}
+  let btns=`<button class="pg-btn" onclick="goPage(${tid},'mail',${page-1})" ${page===1?'disabled':''}>← Prev</button>`;
+  pageRange(page,pages).forEach(n=>{
+    if(n==='…'){btns+=`<button class="pg-btn" disabled>…</button>`;}
+    else{btns+=`<button class="pg-btn${n===page?' current':''}" onclick="goPage(${tid},'mail',${n})">${n}</button>`;}
+  });
+  btns+=`<button class="pg-btn" onclick="goPage(${tid},'mail',${page+1})" ${page===pages?'disabled':''}>Next →</button>`;
+  pag.innerHTML=btns;
+}
+
+// ════════════════════════════════════════════════════════
+//  LOAD DATA PER TAB
+// ════════════════════════════════════════════════════════
+async function loadTab(tid){
+  const dist=DISTS[tid];
+  const p=`t${tid}`;
+  const errBanner=eid(`${p}-banner-error`);
+  errBanner.classList.remove('show');
+
+  // Mark loading in tab button
+  const btn=eid(`tab-btn-${tid}`);
+  const loadDot=document.createElement('span');
+  loadDot.className='tab-loading'; loadDot.id=`${p}-loading-dot`;
+  btn.querySelector('.tab-name').appendChild(loadDot);
+
+  try{
+    const [digitalRows,mailRows]=await Promise.all([
+      fetchCSV(dist.digitalUrl),
+      fetchCSV(dist.mailUrl),
+    ]);
+    STATE[tid].digitalRows=digitalRows;
+    STATE[tid].mailClasses=parseMailClasses(mailRows);
+    STATE[tid].loaded=true;
+    renderDigital(tid,digitalRows);
+    renderMailClasses(tid,STATE[tid].mailClasses);
+    const ts=nowStr();
+    eid('refresh-ts').textContent='Updated '+ts;
+    eid('footer-ts').textContent='Last refreshed: '+ts;
+  } catch(err){
+    errBanner.classList.add('show');
+    eid(`${p}-banner-error-msg`).textContent=`Could not load data for ${dist.clientName}: ${err.message}`;
+    console.error(`Tab ${tid} error:`,err);
+  } finally {
+    const dot=eid(`${p}-loading-dot`);
+    if(dot) dot.remove();
+  }
+}
+
+async function refreshAll(){
+  eid('refresh-ts').textContent='Refreshing…';
+  // Refresh all loaded tabs simultaneously
+  await Promise.all(DISTS.map((_,tid)=>{
+    if(STATE[tid].loaded){
+      STATE[tid].loaded=false;
+      return loadTab(tid);
+    }
+  }));
+}
+
+// ════════════════════════════════════════════════════════
+//  CSV EXPORT
+// ════════════════════════════════════════════════════════
+function csvCell(v){ const s=String(v==null?'':v).replace(/"/g,'""'); return /[",\n\r]/.test(s)?`"${s}"`:s; }
+function buildCSV(rows){ return rows.map(r=>r.map(csvCell).join(',')).join('\r\n'); }
+function downloadCSV(filename,csv){
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast('CSV downloaded');
+}
+
+function exportCSV(tid,type){
+  const dist=DISTS[tid];
+  const slug=dist.clientName.replace(/[^a-z0-9]+/gi,'-').toLowerCase();
+  const dateSlug=dist.distName.replace(/[^a-z0-9]+/gi,'-').toLowerCase();
+
+  if(type==='digital'){
+    const rows=STATE[tid].digitalRows;
+    if(!rows||!rows.length){showToast('No digital data yet');return;}
+    const header=['Candidate Name','Spouse / 2nd Signer','Document Status','Date Signed / Sent','Envelope ID','Notes'];
+    const data=rows.map(r=>{
+      const rawNames=r['Candidate::Name']||r['Name']||'';
+      const names=rawNames.split(',').map(n=>n.trim()).filter(Boolean);
+      return [names[0]||'',names.slice(1).join(', '),r['Document Status']||'',
+              (r['Date Signed']||'').replace(/^Sent\s*-\s*/i,'').split(',')[0],
+              r['Envelope ID']||'',r['Notes']||r['Note']||''];
+    });
+    downloadCSV(`${slug}-digital-${dateSlug}.csv`,buildCSV([header,...data]));
+  } else {
+    const classes=STATE[tid].mailClasses;
+    if(!classes||!classes.length){showToast('No mail data yet');return;}
+    const header=['Class','Name','Status','Mail Date','Tracking Number','IRS Received'];
+    const data=[];
+    classes.forEach(cls=>cls.rows.forEach(r=>{
+      const nm=r.name||r['Name']||'';
+      if(cls.type==='simple'){
+        const raw=r.done!==undefined?r.done:isX(r['Mail Date']||'');
+        data.push([cls.label,nm,(raw===true||raw===1)?'Completed':'Pending','','','']);
+      } else {
+        const md=r.mailDate||r['Mail Date']||'';
+        const tr=r.tracking||r['Tracking Number']||'';
+        const irs=r.irsReceived||r['IRS Received']||'';
+        const status=isRealDate(irs)?'IRS Received':isRealDate(md)?'Mailed':'Pending';
+        data.push([cls.label,nm,status,md,tr,irs]);
+      }
+    }));
+    downloadCSV(`${slug}-mail-${dateSlug}.csv`,buildCSV([header,...data]));
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  PASSWORD
+// ════════════════════════════════════════════════════════
+(function(){
+  const PW_KEY='et_pw_happyco_sep1_2026';
+  function isAuthed(){
+    try{const s=JSON.parse(localStorage.getItem(PW_KEY)||sessionStorage.getItem(PW_KEY)||'null');return s&&s.ok&&s.exp>Date.now();}catch{return false;}
+  }
+  function showDashboard(fade){
+    eid('pw-screen').classList.add('hidden');
+    const pg=eid('main-page'); pg.style.display='';
+    if(fade){pg.style.opacity='0';requestAnimationFrame(()=>{pg.style.transition='opacity .4s';pg.style.opacity='1';});}
+    // Restore last tab
+    const saved=parseInt(sessionStorage.getItem('et_active_tab')||'0');
+    switchTab(!isNaN(saved)&&saved<DISTS.length?saved:0);
+    // Start refresh cycle
+    setInterval(refreshAll, REFRESH_SEC*1000);
+  }
+  if(isAuthed()){showDashboard(false);}
+  eid('pw-input').addEventListener('keydown',e=>{if(e.key==='Enter')checkPassword();});
+  window.checkPassword=function(){
+    const val=eid('pw-input').value;
+    const err=eid('pw-error');
+    if(val===PASSWORD){
+      err.textContent='';
+      const remember=eid('pw-remember').checked;
+      const payload=JSON.stringify({ok:true,exp:Date.now()+(remember?86400000:3600000)});
+      (remember?localStorage:sessionStorage).setItem(PW_KEY,payload);
+      showDashboard(true);
+    } else {
+      err.textContent='Incorrect password — please try again.';
+      const inp=eid('pw-input');
+      inp.value=''; inp.classList.add('shake');
+      setTimeout(()=>inp.classList.remove('shake'),400);
+      inp.focus();
+    }
+  };
+  window.togglePwVis=function(){
+    const inp=eid('pw-input');
+    inp.type=inp.type==='password'?'text':'password';
+  };
+})();
+</script>
+</body>
+</html>
